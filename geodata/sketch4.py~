@@ -1,0 +1,58 @@
+
+from netCDF4 import Dataset
+
+dataPath = "/home/mrilee/data/"
+dataFile =
+
+
+"NPR.AAOP.NK.D05348.S2222.E0015.B3944850.NS"
+
+
+fqFilename = dataPath+dataFile
+
+ds = Dataset(fqFilename)
+print('keys: ',ds.variables.keys())
+
+# lat  = ds['lat'][:,:]
+# lon  = ds['lon'][:,:]
+# data = ds['data'][0,:,:]
+
+# MERRA-2
+lat0=0
+lat1=361+1
+lon0=0
+lon1=576+1
+tim0=0
+tim1=23+1
+
+# lat0=500
+# lat1=1355
+# lon0=0
+# lon1=3311
+
+# lat     = ds['lat'][:]
+lat     = ds['lat'][lat0:lat1]
+# lon     = ds['lon'][:]
+lon     = ds['lon'][lon0:lon1]
+tim     = ds['time'][tim0:tim1:]
+dataDay = ds['TQV'][tim0:tim1,lat0:lat1,lon0:lon1]
+data    = dataDay[10,:,:]
+
+latg,long = np.meshgrid(lon,lat)
+
+print('lat.shape:      ',lat.shape)
+print('lon.shape:      ',lon.shape)
+print('tim.shape:      ',tim.shape)
+print('latg.shape:     ',latg.shape)
+print('long.shape:     ',long.shape)
+print('dataDay.shape:  ',dataDay.shape)
+print('data.shape:     ',data.shape)
+
+ax = plt.axes(projection=ccrs.PlateCarree())
+ax.set_xlim(-180,180)
+ax.set_ylim(-90,90)
+ax.coastlines()
+plt.contourf(lon,lat,data,60,transform=ccrs.PlateCarree())
+# plt.scatter(lon,lat,s=20,c=data)
+
+plt.show()
