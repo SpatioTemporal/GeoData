@@ -64,7 +64,7 @@ def bbox_lonlat(lat,lon,km,close=False):
   else:
     return [lonm,lonp,lonp,lonm],[latm,latm,latp,latp]
 
-stare_temporal_resolutions = { 2: {'1year':18,'1day':27,'1hr':32,'1/2hr':33,'1/4hr':34,'1sec':44,'1msec':54}}
+stare_temporal_resolutions = { 2: {'1year':18,'1day':27, '1/2day':28,'4hr':30,'1hr':32,'1/2hr':33,'1/4hr':34,'1sec':44,'1msec':54}}
 
 def format_time(yr,mo,dy,hr,mn,sc):
     return "%04d-%02d-%02dT%02d:%02d:%02d"%(yr,mo,dy,hr,mn,sc)
@@ -93,7 +93,6 @@ def merra2_stare_time(ds,iTime=None,tType=2,centered=True):
     start_time_mn = 0;
     start_time_sec = 0
     resolution = stare_temporal_resolutions[tType]['1hr']
-
   yr,mo,dy = merra2_parse_begin_date(ds['time'].begin_date)
   tm = []
   if iTime is None:
@@ -109,6 +108,10 @@ def merra2_stare_time(ds,iTime=None,tType=2,centered=True):
   idx      = ps.from_utc(dt.astype(np.int64),resolution)
   return idx
 
+def merra2_stare_time_ds(ds):
+  dt = merra2_stare_time(ds,iTime=12,centered=False);
+  return stare_set_temporal_resolution(dt,stare_temporal_resolutions[2]['1/2day'])[0]
+
 def goes10_img_stare_time(ds,tType=2,centered=True):
   resolution = stare_temporal_resolutions[2]['1/4hr']
   dt = np.array(ds['time'][0]*1000,dtype='datetime64[ms]').reshape([1])
@@ -118,10 +121,10 @@ def goes10_img_stare_time(ds,tType=2,centered=True):
 def datetime_from_stare(tId):
   if type(tId) is np.ndarray:
     return np.array(ps.to_utc_approximate(tId),dtype='datetime64[ms]')
-  return np.array(ps.to_utc_approximate(np.array([tId],dtype=np.int64)),dtype='datetime64[ms]')
+  return np.array(ps.to_utc_approximate(np.array([tId],dtype=np.int64)),dtype='datetime64[ms]')[0]
 
-
-
+def stare_set_temporal_resolution(tId,new_resolution):
+  return (tId & ~(63*4))+(new_resolution*4)
 
 # def make_hull(lat0,lon0,resolution0,ntri0):
 #     hull0 = ps.to_hull_range_from_latlon(lat0,lon0,resolution0,ntri0)
