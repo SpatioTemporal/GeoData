@@ -1,4 +1,6 @@
 
+from math import modf
+
 import matplotlib as mpl
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
@@ -61,6 +63,65 @@ def bbox_lonlat(lat,lon,km,close=False):
     return [lonm,lonp,lonp,lonm,lonm],[latm,latm,latp,latp,latm]
   else:
     return [lonm,lonp,lonp,lonm],[latm,latm,latp,latp]
+
+stare_temporal_resolutions = { 2: {'1year':18,'1day':27,'1hr':32,'1/2hr':33,'1/4hr':34,'1sec':44,'1msec':54}}
+
+def format_time(yr,mo,dy,hr,mn,sc):
+    return "%04d-%02d-%02dT%02d:%02d:%02d"%(yr,mo,dy,hr,mn,sc)
+
+def merra2_parse_begin_date(tim):
+    yr = int(tim/10000)
+    mo = int(tim/100)-int(yr*100)
+    dy = int(tim-mo*100)-int(yr*10000)
+    return yr,mo,dy
+
+def merra2_make_time(start_min,tim_min):
+    start_hr = int(start_min / 60)
+    start_mn = int(start_min % 60)
+    tim_hr = int(tim_min / 60)
+    tim_mn = int(tim_min % 60)
+    t_hr = start_hr + tim_hr
+    t_mn = start_mn + tim_mn
+    return t_hr,t_mn
+
+def merra2_stare_time(ds,iTime=None,tType=2,centered=True):
+  if centered:
+    start_time_mn = ds['time'].begin_time/100
+    start_time_sec = ds['time'].begin_time % 100
+    resolution = stare_temporal_resolutions[tType]['1/2hr']
+  else:
+    start_time_mn = 0;
+    start_time_sec = 0
+    resolution = stare_temporal_resolutions[tType]['1hr']
+
+  yr,mo,dy = merra2_parse_begin_date(ds['time'].begin_date)
+  tm = []
+  if iTime is None:
+    i0=0; i1=24
+  else:
+    i0=iTime; i1=iTime+1
+  for i in range(i0,i1):
+    # hr,mn    = merra2_make_time(ds['time'].begin_date,ds['time'][i])
+    hr,mn    = merra2_make_time(start_time_mn,ds['time'][i])
+    sc       = start_time_sec
+    tm.append(format_time(yr,mo,dy,hr,mn,sc))
+  dt       = np.array(tm,dtype='datetime64[ms]')
+  idx      = ps.from_utc(dt.astype(np.int64),resolution)
+  return idx
+
+def goes10_img_stare_time(ds,tType=2,centered=True):
+  resolution = stare_temporal_resolutions[2]['1/4hr']
+  dt = np.array(ds['time'][0]*1000,dtype='datetime64[ms]').reshape([1])
+  return ps.from_utc(dt.astype(np.int64),resolution)
+  # return ps.from_utc(np.array(ds['time'][:]*1000,dtype='datetime64[ms]').astype(np.int64),resolution)
+
+def datetime_from_stare(tId):
+  if type(tId) is np.ndarray:
+    return np.array(ps.to_utc_approximate(tId),dtype='datetime64[ms]')
+  return np.array(ps.to_utc_approximate(np.array([tId],dtype=np.int64)),dtype='datetime64[ms]')
+
+
+
 
 # def make_hull(lat0,lon0,resolution0,ntri0):
 #     hull0 = ps.to_hull_range_from_latlon(lat0,lon0,resolution0,ntri0)

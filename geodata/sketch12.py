@@ -1,5 +1,5 @@
 
-
+### Cross comparison m2 & b5.
 
 import geodata as gd
 import numpy as np
@@ -32,7 +32,10 @@ m2_tim1=23+1
 m2_lat     = m2_ds['lat'][m2_lat0:m2_lat1]
 m2_lon     = m2_ds['lon'][m2_lon0:m2_lon1]
 m2_tim     = m2_ds['time'][m2_tim0:m2_tim1]
-m2_dataDay = m2_ds['TQV'][m2_tim0:m2_tim1,m2_lat0:m2_lat1,m2_lon0:m2_lon1]
+m2_dataDayI = m2_ds['TQI'][m2_tim0:m2_tim1,m2_lat0:m2_lat1,m2_lon0:m2_lon1]
+m2_dataDayL = m2_ds['TQL'][m2_tim0:m2_tim1,m2_lat0:m2_lat1,m2_lon0:m2_lon1]
+m2_dataDayV = m2_ds['TQV'][m2_tim0:m2_tim1,m2_lat0:m2_lat1,m2_lon0:m2_lon1]
+m2_dataDay = m2_dataDayI + m2_dataDayL + m2_dataDayV
 m2_data    = m2_dataDay[0,:,:].T
 m2_latg,m2_long = np.meshgrid(m2_lat,m2_lon)
 m2_latg_flat = m2_latg.flatten()
@@ -40,6 +43,7 @@ m2_long_flat = m2_long.flatten()
 m2_data_flat = m2_data.flatten()
 print([type(i) for i in [m2_latg_flat,m2_long_flat,gd.resolution(m2_dLonkm),m2_dLonkm]])
 m2_indices = ps.from_latlon(m2_latg_flat,m2_long_flat,int(gd.resolution(m2_dLonkm)))
+
 print('m2 lat.shape:      ',m2_lat.shape)
 print('m2 lon.shape:      ',m2_lon.shape)
 print('m2 tim.shape:      ',m2_tim.shape)
@@ -48,6 +52,7 @@ print('m2 long.shape:     ',m2_long.shape)
 print('m2 dataDay.shape:  ',m2_dataDay.shape)
 print('m2 data.shape:     ',m2_data.shape)
 print('m2 data flat shape:',m2_data_flat.shape)
+print('m2 resolution:     ',m2_dLonkm,gd.resolution(m2_dLonkm))
 
 # Limit size for testing
 cropped = True
@@ -59,8 +64,16 @@ if cropped:
     # crop_lat=(  30.0,  32.0)
     # crop_lon=(-164.0,-162.0)
 
-    crop_lat=(  25.0,  30.0)
-    crop_lon=(-160.0,-150.0)
+    # crop_lat=(  25.0,  30.0) # oops
+    # crop_lat=(  25.0,  35.0)
+    # crop_lon=(-160.0,-150.0)
+
+    crop_lat=(  27.0,  39.0)
+    crop_lon=(-161.5,-159.5)
+
+    # Good
+    # crop_lat=(  27.5,  32.5)
+    # crop_lon=(-162.5,-157.5)
 
     m2_crop_idx = np.where(\
                            (m2_latg_flat > crop_lat[0]) & (m2_latg_flat < crop_lat[1]) & \
@@ -72,6 +85,7 @@ if cropped:
     print('m2 cropped length: ', m2_data_flat.size)
 
 ar_threshold_kgom2 = 2.0/gd.precipitable_water_cm_per_kgom2
+ar_threshold_kgom2 = 0.0
 print('ar_threshold_kgom2: ',ar_threshold_kgom2)
 
 m2_ar_idx = np.where(m2_data_flat >= ar_threshold_kgom2)
@@ -102,12 +116,19 @@ goes_b5_dataFile = "goes10.2005.349.003015.BAND_05.nc"
 goes_b5_fqFilename = goes_b5_dataPath+goes_b5_dataFile
 goes_b5_ds = Dataset(goes_b5_fqFilename)
 goes_b5_lat0=0
-goes_b5_lat1=1355
+goes_b5_lat1=1355+1
 goes_b5_lon0=0
-goes_b5_lon1=3311
+goes_b5_lon1=3311+1
 goes_b5_lat  = goes_b5_ds['lat'][goes_b5_lat0:goes_b5_lat1,goes_b5_lon0:goes_b5_lon1]
 goes_b5_lon  = goes_b5_ds['lon'][goes_b5_lat0:goes_b5_lat1,goes_b5_lon0:goes_b5_lon1]
 goes_b5_data = goes_b5_ds['data'][0,goes_b5_lat0:goes_b5_lat1,goes_b5_lon0:goes_b5_lon1]
+# print('goes_b5_elemRes = ',goes_b5_ds['elemRes'])
+# print('goes_b5_elemRes = ',goes_b5_ds['elemRes'].long_name)
+# print('goes_b5_elemRes = ',goes_b5_ds['elemRes'][0])
+# print('goes_b5_elemRes = ',goes_b5_ds['elemRes'].units)
+# print('goes_b5_elemRes = ',goes_b5_ds['lineRes'])
+# print('goes_b5_elemRes = ',goes_b5_ds['lineRes'][0])
+# exit()
 goes_b5_elemRes = goes_b5_ds['elemRes'][0]*0.5
 goes_b5_lat_flat = goes_b5_lat.flatten()
 goes_b5_lon_flat = goes_b5_lon.flatten()
@@ -115,6 +136,15 @@ goes_b5_data_flat = goes_b5_data.flatten()
 goes_b5_indices = ps.from_latlon(goes_b5_lat_flat,goes_b5_lon_flat,int(gd.resolution(goes_b5_elemRes)))
 print('goes_b5_indices size: ',goes_b5_indices.size)
 print('goes_b5_indices type: ',type(goes_b5_indices.size))
+print('goes_b5 resolution:   ',goes_b5_elemRes,gd.resolution(goes_b5_elemRes))
+# exit()
+
+if False:
+    plt.figure()
+    plt.imshow(goes_b5_data)
+    plt.show()
+
+exit()
 
 if cropped:
     goes_b5_crop_idx = np.where(\
@@ -187,9 +217,9 @@ m2_ar_n1 = m2_ar_n0 + m2_ar_nroi
 #     # print(i,' cmp shape: ',cmp[0].shape)
 
 m2_g5_matches = {}
-k=0
+# k=0
 for i in range(len(goes_b5_indices)):
-    k=k+1; print('comparison iter k ',k)
+    # k=k+1; print('comparison iter k ',k)
     # print('i ',i,type(goes_b5_indices[i]),type(m2_ar_indices))
     cmp = np.nonzero(ps.cmp_spatial(np.array([goes_b5_indices[i]],dtype=np.int64),m2_ar_indices))
     if cmp[0].size > 0:
@@ -206,29 +236,35 @@ print('type(m2_g5_matches): ',type(m2_g5_matches))
 
 # Visualize
 
-if False:
+if True:
     proj=ccrs.PlateCarree()
     transf = ccrs.Geodetic()
     
     plt.figure()
     ax = plt.axes(projection=proj)
-    ax.set_xlim(-180,180)
-    ax.set_ylim(-90,90)
+    ax.set_global()
+    # ax.set_xlim(-180,180)
+    # ax.set_ylim(-90,90)
     ax.coastlines()
+
+    # Plot m2
+    # plt.scatter(m2_long,m2_latg,s=15,c=m2_data,transform=transf)
+    plt.scatter(m2_long,m2_latg,s=20,c=m2_data,transform=transf)
     
     # plt.contourf(goes_b5_lon,goes_b5_lat,goes_b5_data,60,transform=transf)
-    plt.scatter(goes_b5_lon_flat,goes_b5_lat_flat,s=30,c=goes_b5_data_flat,transform=ccrs.Geodetic())
+    plt.scatter(goes_b5_lon_flat,goes_b5_lat_flat,s=0.75,c=goes_b5_data_flat,transform=ccrs.Geodetic())
     
     # Plot m2 AR thresh.
-    # gd.plot_indices(goes_b5_indices,c='g',transform=transf)
-    gd.plot_indices(m2_ar_indices[m2_ar_n0:m2_ar_n1],c='c',transform=transf,lw=2)
-    
-    # Plot matching goes_b5.
-    for j in m2_g5_matches:
-        gd.plot_indices(goes_b5_indices[m2_g5_matches[j]],c='r',transform=transf,lw=1)
+    if False:
+        # gd.plot_indices(goes_b5_indices,c='g',transform=transf)
+        gd.plot_indices(m2_ar_indices[m2_ar_n0:m2_ar_n1],c='c',transform=transf,lw=0.25)
+        # Plot matching goes_b5.
+        for j in m2_g5_matches:
+            gd.plot_indices(goes_b5_indices[m2_g5_matches[j]],c='r',transform=transf,lw=0.25)
     
     # Plot m2
-    plt.scatter(m2_long,m2_latg,s=15,c=m2_data,transform=transf)
+    # plt.scatter(m2_long,m2_latg,s=15,c=m2_data,transform=transf)
+
     plt.show()
 
 if True:
@@ -244,13 +280,44 @@ if True:
                 plt.scatter(x,y,s=15,alpha=0.5,c='black')
 
     if True:
+        ndat = len(m2_g5_matches)
+        xdat = np.zeros([ndat],dtype=np.double)
+        ydat = np.zeros([ndat],dtype=np.double)
+        wght = np.zeros([ndat],dtype=np.double)
+        k=0
         for j in m2_g5_matches:
             x = m2_ar_data[j]
             # y = 
+            ymn = np.amin(goes_b5_data_flat[m2_g5_matches[j]])
+            ymx = np.amax(goes_b5_data_flat[m2_g5_matches[j]])
+            ystd = np.std(goes_b5_data_flat[m2_g5_matches[j]])
             ybar = np.mean(goes_b5_data_flat[m2_g5_matches[j]])
-            plt.scatter(x,ybar,s=30,alpha=0.5,c='red')
-    
+            xdat[k] = x
+            ydat[k] = ybar
+            wght[k] = 1.0/ystd
+            k=k+1
+            plt.plot([x,x],[ymn,ymx],alpha=0.5,c='red')
+            plt.plot([x,x],[ybar-ystd,ybar+ystd],alpha=0.5,c='red')
+            plt.scatter(x,ybar,s=30,c='darkred')
+            plt.scatter([x,x],[ymn,ymx],s=15,c='coral')
+        coeffs = np.polyfit(xdat,ydat,1,w=wght)
+        print('coeffs: ',coeffs)
+        poly   = np.poly1d(coeffs)
+        plt.plot(xdat,poly(xdat),c='black')
     plt.show()
+
+# For m2 vs. b5
+## # coeffs:  [ -291.49804783 20692.06646311]
+## >>> def p(x):
+## ...    return -291.5*x + 20692.066
+## ... 
+## >>> p(2)
+## 20109.066
+## >>> p(3)
+## 19817.566
+## >>> p(20)
+## 14862.065999999999
+## So the threshold for b5 is < ~14800.
 
 exit()
 

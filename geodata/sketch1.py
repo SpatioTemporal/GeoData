@@ -1,5 +1,9 @@
 
 
+"""
+Load a GOES 10 band 5 image.
+"""
+
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
