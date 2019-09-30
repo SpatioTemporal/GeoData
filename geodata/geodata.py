@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 import cartopy.crs as ccrs
 
+from netCDF4 import Dataset
+
 import numpy as np
 import pystare as ps
 import unittest
@@ -125,6 +127,16 @@ def datetime_from_stare(tId):
 
 def stare_set_temporal_resolution(tId,new_resolution):
   return (tId & ~(63*4))+(new_resolution*4)
+
+def temporal_id_from_file(path,fname):
+  ds = Dataset(path+fname)
+  if "MERRA" in fname:
+    return merra2_stare_time_ds(ds)
+  elif "goes" in fname:
+    return goes10_img_stare_time(ds)[0]
+  else:
+    return -1
+
 
 # def make_hull(lat0,lon0,resolution0,ntri0):
 #     hull0 = ps.to_hull_range_from_latlon(lat0,lon0,resolution0,ntri0)
