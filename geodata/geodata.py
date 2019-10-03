@@ -1,4 +1,6 @@
 
+import datetime as dt
+
 from math import modf
 
 import matplotlib as mpl
@@ -135,8 +137,58 @@ def temporal_id_from_file(path,fname):
   elif "goes" in fname:
     return goes10_img_stare_time(ds)[0]
   else:
-    return -1
+    return None
 
+def temporal_id_centered_from_goes_filename(gfname):
+    gfname_split = gfname.split(".")
+    yr  = gfname_split[1]
+    ydy = gfname_split[2]
+    hr  = int(gfname_split[3][0:2])
+    mn  = int(gfname_split[3][2:4])
+    sec = int(gfname_split[3][4:6])
+    gdt = dt.datetime(int(yr),1,1)+dt.timedelta(int(ydy)-1)
+    gdt_str = format_time(int(yr),int(gdt.month),int(gdt.day),hr,mn,sec)
+    gdt_np = np.array([gdt_str],dtype='datetime64[ms]')
+    gtid_centered = ps.from_utc(gdt_np.astype(np.int64),stare_temporal_resolutions[2]['1/4hr'])
+    return gtid_centered
+
+def temporal_id_centered_from_merra2_filename(m2name):
+    m2name_split = m2name.split(".")
+    yr  = int(m2name_split[2][0:4])
+    mo  = int(m2name_split[2][4:6])
+    dy  = int(m2name_split[2][6:8])
+    hr  = 12
+    mn  = 0
+    sec = 0
+    m2dt_str = format_time(yr,mo,dy,hr,mn,sec)
+    m2dt_np = np.array([m2dt_str],dtype='datetime64[ms]')
+    m2tid_centered = ps.from_utc(m2dt_np.astype(np.int64),stare_temporal_resolutions[2]['1/2day'])
+    return m2tid_centered
+
+def temporal_id_centered_from_filename(fname):
+  if "MERRA" in fname:
+    return temporal_id_centered_from_merra2_filename(fname)[0]
+  elif "goes" in fname:
+    return temporal_id_centered_from_goes_filename(fname)[0]
+  else:
+    return None
+
+def spatial_resolution(sid):
+    return sid & 31 # levelMaskSciDB
+
+def spatial_terminator_mask(level):
+    return ((1 << (1+ 58-2*level))-1)
+
+def spatial_terminator(sid):
+    return sid | ((1 << (1+ 58-2*(sid & 31)))-1)
+
+def spatial_coerce_resolution(sid,resolution):
+    return (sid & ~31) | resolution
+
+def spatial_clear_to_resolution(sid):
+    resolution = sid & 31
+    mask =  spatial_terminator_mask(spatial_resolution(sid))
+    return (sid & ~mask) + resolution
 
 # def make_hull(lat0,lon0,resolution0,ntri0):
 #     hull0 = ps.to_hull_range_from_latlon(lat0,lon0,resolution0,ntri0)
