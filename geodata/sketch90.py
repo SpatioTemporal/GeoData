@@ -42,7 +42,7 @@ tpw_scale  = workFile['/merra2_description']['tpw_scale']
 tpw_offset = workFile['/merra2_description']['tpw_offset']
 print('tpw scale offset: ',tpw_scale,tpw_offset)
 
-m2_img = workFile['/image']['merra2_tpw'].reshape(nx,ny)
+# m2_img = workFile['/image']['merra2_tpw'].reshape(nx,ny)
 m2_img = tpw_offset + tpw_scale*workFile['/image']['merra2_tpw'].reshape(nx,ny)
 print('m2 mnmx: ',np.amin(m2_img),np.amax(m2_img))
 ax1.set_title('tpw')

@@ -219,7 +219,9 @@ for k in range(nktr):
         if join[sid].contains('m2'):
             m2s = join[sid].get('m2')[0] # Grab the first one
             m2_src_coord_h5[join[sid].get('goes_b5')] = m2s
-            m2_tpw_h5[join[sid].get('goes_b5')]       = (m2_data_flat[m2s]-tpw_offset)/tpw_scale
+            # m2_tpw_h5[join[sid].get('goes_b5')]       = (m2_data_flat[m2s]-tpw_offset)/tpw_scale
+            avg = (np.mean(m2_data_flat[join[sid].get('m2')])-tpw_offset)/tpw_scale
+            m2_tpw_h5[join[sid].get('goes_b5')]       = avg
             elements_pushed = elements_pushed + len(join[sid].get('goes_b5'))
 
 print('m2_tpw_h5 shape: ',m2_tpw_h5.shape)
@@ -240,7 +242,6 @@ workFile['/merra2_description']['ny'] = 361
 workFile['/merra2_description']['tpw_offset'] = tpw_offset
 workFile['/merra2_description']['tpw_scale']  = tpw_scale
 workFile.close()
-
 
 fig, (ax0,ax1) = plt.subplots(nrows=2)
 
