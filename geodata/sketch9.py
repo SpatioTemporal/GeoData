@@ -1,4 +1,6 @@
 
+# Construct a compliant h5 data file that looks like the desired dataset.
+
 import geodata as gd
 import h5py as h5
 from netCDF4 import Dataset
@@ -7,11 +9,16 @@ import pystare as ps
 import json
 from sortedcontainers import SortedDict, SortedList
 
+from time import process_time as timer
+
 import matplotlib as mpl
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 import cartopy.crs as ccrs
+
+viz_enable = False
+start0 = timer()
 
 ### GOES DATASET
 goes_b5_dataPath = "/home/mrilee/data/"
@@ -63,6 +70,9 @@ m2_dataDay      = m2_dataDayI + m2_dataDayL + m2_dataDayV
 m2_data         = m2_dataDay[:,:].T
 m2_data_flat    = m2_data.flatten()
 print('m2 data mnmx: ',np.amin(m2_data_flat),np.amax(m2_data_flat))
+
+start1 = timer()
+print('data load done, time = ', start1-start0)
 
 ### HDF5 SAVE DATASET
 # workPath     = "/home/mrilee/tmp/"
@@ -166,6 +176,9 @@ class join_value(object):
 def hex16(i):
     return "0x%016x"%i
 
+start2 = timer()
+print('join prep done, time12 = ',start2-start1)
+
 join_resolution = m2_resolution
 join = SortedDict()
 
@@ -184,12 +197,18 @@ for k in range(len(g_idx_valid[0])):
     #     break
     #     # exit();
 
+start2a = timer()
+print('add goes b5 to join, time = ',start2a-start2)
+
 print('add MERRA-2 to join')
 for k in range(len(m2_indices)):
     jk = gd.spatial_clear_to_resolution(m2_indices[k])
     if jk not in join.keys():
         join[jk] = join_value()
     join[jk].add('m2',k)
+
+start2b = timer()
+print('add merra2 to join, time = ',start2b-start2a)
 
 print('len(join): ',len(join))
 
@@ -224,8 +243,15 @@ for k in range(nktr):
             m2_tpw_h5[join[sid].get('goes_b5')]       = avg
             elements_pushed = elements_pushed + len(join[sid].get('goes_b5'))
 
+
+
 print('m2_tpw_h5 shape: ',m2_tpw_h5.shape)
 print('m2_tpw_h5 mnmx:  ',np.amin(m2_tpw_h5),np.amax(m2_tpw_h5))
+
+start3 = timer()
+print('add m2 data and index mappings to join, time = ',start3-start2b)
+print('join done, time23 = ',start3-start2)
+
 
 workFile['/image']['stare_spatial'] = goes_b5_indices[:]
 workFile['/image']['stare_temporal'] = gd.goes10_img_stare_time(goes_b5_ds)[0]
@@ -243,19 +269,39 @@ workFile['/merra2_description']['tpw_offset'] = tpw_offset
 workFile['/merra2_description']['tpw_scale']  = tpw_scale
 workFile.close()
 
-fig, (ax0,ax1) = plt.subplots(nrows=2)
 
-nx = goes_b5_ds['data'].shape[1]
-ny = goes_b5_ds['data'].shape[2]
+def report_time(msg,delta,total):
+    return "% 30s %d %2f%"%(msg,delta,total)
 
-b5_img = goes_b5_ds['data'][0,:,:].flatten().reshape(nx,ny)
-print('b5 mnmx: ',np.amin(b5_img),np.amax(b5_img))
-ax0.set_title('b5')
-ax0.imshow(b5_img)
+start4 = timer()
+print('write hdf done, time34 =                  ',start4-start3)
+end0 = timer()
+print('')
+print('timings')
+print('data load done, time =                   ', start1-start0)
+print('join prep done, time12 =                 ',start2-start1)
+print('add goes b5 to join, time =              ',start2a-start2)
+print('add merra2 to join, time =               ',start2b-start2a)
+print('add m2 data/index mappings join, time =  ',start3-start2b)
+print('join done, time23 =                      ',start3-start2)
+print('write hdf done, time34 = ',start4-start3)
 
-m2_img = m2_tpw_h5.reshape(nx,ny)
-print('m2 mnmx: ',np.amin(m2_img),np.amax(m2_img))
-ax1.set_title('tpw')
-ax1.imshow(m2_img)
-plt.show()
+print('global time: ',end0-start0)
+
+if viz_enable:
+    fig, (ax0,ax1) = plt.subplots(nrows=2)
+    
+    nx = goes_b5_ds['data'].shape[1]
+    ny = goes_b5_ds['data'].shape[2]
+    
+    b5_img = goes_b5_ds['data'][0,:,:].flatten().reshape(nx,ny)
+    print('b5 mnmx: ',np.amin(b5_img),np.amax(b5_img))
+    ax0.set_title('b5')
+    ax0.imshow(b5_img)
+    
+    m2_img = m2_tpw_h5.reshape(nx,ny)
+    print('m2 mnmx: ',np.amin(m2_img),np.amax(m2_img))
+    ax1.set_title('tpw')
+    ax1.imshow(m2_img)
+    plt.show()
 

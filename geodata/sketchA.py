@@ -1,4 +1,6 @@
 
+# Check terminators at various resolutions.
+
 import geodata as gd
 import numpy as np
 import pystare as ps

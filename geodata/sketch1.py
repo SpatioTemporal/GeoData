@@ -15,7 +15,6 @@ dataPath = "/home/mrilee/data/"
 # dataFile = "goes10.2005.349.000122.sndr.BAND_07.nc" 
 dataFile = "goes10.2005.349.003015.BAND_05.nc"
 
-
 fqFilename = dataPath+dataFile
 
 ds = Dataset(fqFilename)

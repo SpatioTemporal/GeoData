@@ -1,0 +1,36 @@
+
+
+* Notes on sketches
+
+(insert (concat "\n" (shell-command-to-string "ls geodata/* | grep -v \\~ ")))
+
+*** geodata/geodata.py The main module.
+
+*** geodata/sketch1.py  Load GOES IMG Band 5 data (NetCDF4)
+*** geodata/sketch10.py Load GOES SNDR Band 7 data
+*** geodata/sketch11.py Load MERRA-2 TPW data, scatterplot
+*** geodata/sketch12.py Cross comparison MERRA-2 and GOES IMG Band 5, plot correlation
+*** geodata/sketch13.py Cross comparison MERRA-2 and GOES IMG Band 3
+*** geodata/sketch14.py Cross comparison MERRA-2 and GOES IMG Band 4
+
+*** geodata/sketch2.py Synthetic data containing parameterized tracks
+*** geodata/sketch3.py Load and scatterplot MERRA-2 data
+*** geodata/sketch4.py Load and scatterplot AAOP/DMOP/MHOP alternative TPW data (MSPPS ORB)
+*** geodata/sketch5.py Load MERRA-2 times and create STARE temporal indices
+A big question here is are we working with intervals or points.
+*** geodata/sketch6.py Work with STARE temporal ids from NetCDF4 datasets
+Do we want to work with intervals or points in time?
+*** geodata/sketch7.py Look for intersections between MERRA and GOES files (reads files)
+*** geodata/sketch8.py Get STARE temporal id from filenames and compare (uses filenames)
+
+*** geodata/sketch9.py Construct a compliant h5 data file.
+*** geodata/sketch90.py Read from the h5 file and check the results of sketch9.py.
+*** geodata/sketch91.py Load GOES dataset from NetCDF4 files, load a few locations and check resolution.
+*** geodata/sketch92.py Load data from the h5 file and fit three components to the histogram.
+
+*** geodata/sketchA.py Check terminators at various resolutions, esp. 27.
+*** geodata/sketchB.py Go over sortedcontainers and iterators.
+*** geodata/sketchC.py DASK accelerates ps.from_latlon STARE calc.
+*** geodata/sketchD.py stopwatch sketching, 
+
+
