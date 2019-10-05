@@ -6,8 +6,8 @@ import numpy as np
 import pystare as ps
 
 # sid    = 1
-# sid      = 0x7000000000000000+27
-sid    = 0x799d1bcabd6f9260+11
+sid      = 0x7000000000000000+27
+# sid    = 0x799d1bcabd6f9260+11
 # sid    = 0x799d1bcabd6f9260+0
 # sid    = 0x799d1bcabd6f0000 + 27
 # sid    = 0x799d1bcabd6f0000 + 26
@@ -26,7 +26,7 @@ print('term x%016x'%sid_term)
 # sid_term = sid_term - 31 + 27
 # print(ps.to_latlon([sid_term]))
 
-exit()
+# exit()
 
 print(hex(sid))
 print(hex(sid_term))

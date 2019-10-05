@@ -32,8 +32,30 @@ print('m2 mnmx: ',np.amin(m2_img),np.amax(m2_img))
 
 
 b5_img_tot = b5_img[np.where(b5_img>1000)]
-m2_img_ge2_idx = np.where((m2_img >= 20.0) & (b5_img>1000))
-m2_img_lt2_idx = np.where((m2_img < 20.0) & (b5_img>1000))
+m2_img_ge2_idx = np.where((m2_img >= 20.0) & (b5_img>1000)) # This is where TPW is high and b5 is low.
+m2_img_lt2_idx = np.where((m2_img < 20.0) & (b5_img>1000))  # Reverse.
+
+nx = workFile['/image_description']['nx']
+ny = workFile['/image_description']['ny']
+
+### ### FIGURES ### 
+### fig,axs = plt.sub
+### 
+### plt.figure()
+### plt.imshow(b5_img.reshape(nx,ny))
+### plt.show()
+### 
+### b5_img_ge = b5_img.copy()
+### b5_img_lt = b5_img.copy()
+### 
+### b5_img_ge[m2_img_lt2_idx]=0
+### b5_img_lt[m2_img_ge2_idx]=0
+### 
+### plt.imshow(b5_img_ge.reshape(nx,ny))
+### plt.show()
+### 
+### plt.imshow(b5_img_lt.reshape(nx,ny))
+### plt.show()
 
 b5_img_ge = b5_img[m2_img_ge2_idx]
 b5_img_lt = b5_img[m2_img_lt2_idx]
@@ -63,16 +85,16 @@ print('bins_',bins_)
 fig,ax1 = plt.subplots()
 
 ax1.set_title('GOES B5 decomposed against M2-TPW>2')
-ax1.annotate("b5[m2>2]/tot.",xy=(2000,500000))
-ax1.annotate("b5[m2<2]/tot.", xy=(2000,250000))
+# ax1.annotate("b5[m2>2]/tot.",xy=(2000,500000))
+# ax1.annotate("b5[m2<2]/tot.", xy=(2000,250000))
 
 ax1.set_xlabel('B5 Raw Counts')
 ax1.set_ylabel('Histogram')
 
-alpha=0.5
+alpha=0.6
 n,bins_tot,patches_tot = ax1.hist(b5_img_tot,bins=bins_,facecolor='blue',alpha=alpha)
 n,bins_ge,patches_ge   = ax1.hist(b5_img_ge,bins=bins_,facecolor='cyan',alpha=alpha)
-n,bins_lt,patches_lt   = ax1.hist(b5_img_lt,bins=bins_,facecolor='red',alpha=1)
+n,bins_lt,patches_lt   = ax1.hist(b5_img_lt,bins=bins_,facecolor='red',alpha=alpha)
 
 y_hist_ge = [ i.get_height() for i in patches_ge ]
 y_hist_lt = [ i.get_height() for i in patches_lt ]
@@ -81,25 +103,20 @@ y_hist_lt = [ i.get_height() for i in patches_lt ]
 # print('patches_lt: ',[h.get_height() for h in patches_lt])
 
 
+bkg = 90000
+
 ax2 = ax1.twinx()
 if True:
     x = [ 0.5*(bins_tot[i]+bins_tot[i+1]) for i in range(len(bins_tot)-1) ]
-    y = [ patches_ge[i].get_height()/patches_tot[i].get_height() for i in range(len(patches_ge)) ]
-
-    ax2.plot(x,y,color='red')
-    # print(bins_tot)
-    # print(bins_ge)
-    # print(bins_lt)
+    y = [ (patches_lt[i].get_height())/(patches_ge[i].get_height()) for i in range(len(patches_ge)) ]
+    ax2.plot(x,y,color='darkorange',linewidth=3)
     
-    x = [ 0.5*(bins_tot[i]+bins_tot[i+1]) for i in range(len(bins_tot)-1) ]
-    y = [ patches_lt[i].get_height()/patches_tot[i].get_height() for i in range(len(patches_ge)) ]
-
-    ax2.plot(x,y,color='blue')
 
 if False:
     # ax2.set_ylim(0,2.5)
     x = [ 0.5*(bins_tot[i]+bins_tot[i+1]) for i in range(len(bins_tot)-1) ]
-    y = [ patches_lt[i].get_height()/patches_ge[i].get_height() for i in range(len(patches_ge)) ]
+    y = [ patches_ge[i].get_height()/patches_lt[i].get_height() for i in range(len(patches_ge)) ]
+    # y = [ patches_lt[i].get_height()/patches_ge[i].get_height() for i in range(len(patches_ge)) ]
     # y = np.array([ patches_lt[i].get_height()/patches_ge[i].get_height() for i in range(len(patches_ge)) ])
     # y = np.array([ np.log(patches_lt[i].get_height())/np.log(patches_ge[i].get_height()) for i in range(len(patches_ge)) ])
 
@@ -119,14 +136,13 @@ if False:
     ax2.plot(x,y,color='blue')
     ax2.plot([x[0],x[-1]],[1,1],color='grey')
 
-ax2.set_ylabel('m5 m2 on/off ratio')
+ax2.plot([x[0],x[-1]],[1,1],color='grey')
+ax2.set_ylabel('b5 m2 on/off ratio')
 
 x = np.linspace(2000,21500,100)
 
 # mu_ge,std_ge = norm.fit(b5_img_ge)
 # p_ge = norm.pdf(x,mu_ge,std_ge)
-
-bkg = 90000
 
 a,loc,scale = skewnorm.fit(b5_img_ge[np.where(b5_img_ge>15000)])
 p_ge = skewnorm.pdf(x,a,loc,scale)
@@ -141,9 +157,12 @@ a,loc,scale = skewnorm.fit(b5_img_lt[np.where((b5_img_lt>7500) & (b5_img_lt<1500
 p_lt = skewnorm.pdf(x,a,loc,scale)
 p_lt = p_lt/np.amax(p_lt)
 p_lt = p_lt*(np.amax(y_hist_lt)-bkg)
-ax1.plot(x,p_lt+bkg,linewidth=2,color='red')
+ax1.plot(x,p_lt+bkg,linewidth=2,color='gold')
 
-ax1.plot(x,p_lt+p_ge+2*bkg,linewidth=2)
+ax1.plot(x,p_lt+p_ge+2*bkg,linewidth=2,color='lime')
+
+# ratio
+ax2.plot(x,(p_lt+bkg)/(p_ge+bkg),linewidth=3,color='orange')
 
 plt.show()
 
