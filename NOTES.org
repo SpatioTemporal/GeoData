@@ -28,10 +28,12 @@ Do we want to work with     intervals or points in time?
 *** geodata/sketch91.py   Load GOES dataset from NetCDF4 files, load a few locations and check resolution.
 *** geodata/sketch92.py   Load data from the h5 file and fit three components to the histogram.
 *** geodata/sketch93.py   Load h5 data, like 92, but display the ratio b5[ge]/b5[lt]
+*** geodata/sketch94.py   Load h5 data, like 92, but display image masked by m2 tpw at various thresholds
+*** geodata/sketch94a.py  Load h5 data, like 92, but display image masked by b5 with various thresholds
 
 *** geodata/sketchA.py    Check terminators at various resolutions, esp. 27.
 *** geodata/sketchB.py    Go over sortedcontainers and iterators.
 *** geodata/sketchC.py    DASK accelerates ps.from_latlon STARE calc.
 *** geodata/sketchD.py    Stopwatch sketching, 
 
-
+*** geodata/sketchE.py    Try CCL.
