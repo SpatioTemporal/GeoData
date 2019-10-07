@@ -13,6 +13,8 @@ from netCDF4 import Dataset
 
 import numpy as np
 import pystare as ps
+import os, fnmatch
+import yaml
 import unittest
 
 
@@ -188,7 +190,9 @@ def temporal_match_to_merra2_ds(tid,m2ds):
     return fine_match
 
 def temporal_match_to_merra2(tid,m2_tid_index,dataPath=""):
-    gm2_match = ps.cmp_temporal(np.array([tid],dtype=np.int64),list(m2_tid_index.keys())) # TODO Could speed up this using sortedcontainers?
+
+    gm2_match = ps.cmp_temporal(np.array([tid],dtype=np.int64),list(m2_tid_index.keys())) # TODO Could speed up this using sortedcontainers? Would have to map to a particular level?
+
     match_fnames = []
     for i in range(gm2_match.size):
         if gm2_match[i] == 1:
@@ -225,6 +229,55 @@ def spatial_clear_to_resolution(sid):
     resolution = sid & 31
     mask =  spatial_terminator_mask(spatial_resolution(sid))
     return (sid & ~mask) + resolution
+
+
+###########################################################################
+
+class data_catalog(object):
+    def __init__(self,config):
+        self.config = config
+        self.files  = None
+        return
+
+    def get_files(self):
+        if self.files is None:
+            self.files = []
+            if 'directory' in self.config.keys():
+                dir = self.config['directory']
+            else:
+                dir = "./"
+            filelist = os.listdir(dir)
+            if 'patterns' in self.config.keys():
+                patterns = self.config['patterns']
+            else:
+                patterns = ['*']
+            for pattern in patterns:
+                for entry in filelist:
+                    if fnmatch.fnmatch(entry,pattern):
+                        self.files.append(entry)        
+        return self.files
+
+    def get_tid_centered_index(self):
+        return temporal_id_centered_filename_index(self.get_files())
+
+    def find(self,tid):
+        ok = False
+        for p in self.config['patterns']:
+            ok = ok or "MERRA" in p
+        if ok:
+            return temporal_match_to_merra2(tid
+                                            ,self.get_tid_centered_index()
+                                            ,dataPath=self.config['directory'])
+        else:
+            print('*ERROR* data_catalog.find not implemented for ',self.config['patterns'])
+        return []
+
+# def data_catalog_from_yaml(filename):
+#     with open(filename) as f:
+#         return data_catalog(yaml.load(f,Loader=yaml.FullLoader))
+#     return None
+
+
 
 # def make_hull(lat0,lon0,resolution0,ntri0):
 #     hull0 = ps.to_hull_range_from_latlon(lat0,lon0,resolution0,ntri0)

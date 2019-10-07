@@ -60,15 +60,4 @@ ax.get_yaxis().set_visible(False)
 plt.imshow(m2_img)
 plt.show()
 
-
-
-
-
-
-
-
-
-
-
-
 workFile.close()

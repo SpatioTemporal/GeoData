@@ -37,6 +37,7 @@ Do we want to work with     intervals or points in time?
 *** geodata/sketchD.py    Stopwatch sketching, 
 
 *** geodata/sketchE.py    Try CCL. Used both cv2 calls and ccl_marker_stack.
+*** geodata/sketchF.py    Try to make preprocessing into a callable function.
  
 * Details on performing CCL on the GOES bands
 ** Choose a threshold
