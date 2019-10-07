@@ -16,7 +16,6 @@ import cartopy.crs as ccrs
 import cv2
 from ccl_marker_stack import ccl_marker_stack
 
-
 workFileName = "work.h5"
 #workFile     = h5.File(workPath+workFileName,'r')
 workFile     = h5.File(workFileName,'r')
@@ -73,11 +72,7 @@ if False:
 if False:
     cv2.imshow('thresh',thresh); cv2.waitKey(0); cv2.destroyAllWindows()
 
-if True:
-    ret,thresh  = cv2.threshold(data,d_trigger,d_out,cv2.THRESH_BINARY_INV) # less than, for b5
-    print('thresh ret:  ',type(ret),ret)
-    print('thresh type: ',type(thresh),thresh.shape,np.amin(thresh),np.amax(thresh))
-
+# This works
 if False:
     # Pass in external threshold
     marker_stack = ccl_marker_stack() 
@@ -93,6 +88,12 @@ if False:
     markers=m1_new
     print('markers type,len ',type(markers),len(markers))
     # print('markers ',markers)
+
+# The following two also work
+if True:
+    ret,thresh  = cv2.threshold(data,d_trigger,d_out,cv2.THRESH_BINARY_INV) # less than, for b5
+    print('thresh ret:  ',type(ret),ret)
+    print('thresh type: ',type(thresh),thresh.shape,np.amin(thresh),np.amax(thresh))
 
 if True:
     # Pass in data, ask for threshold

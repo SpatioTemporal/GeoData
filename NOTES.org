@@ -36,4 +36,9 @@ Do we want to work with     intervals or points in time?
 *** geodata/sketchC.py    DASK accelerates ps.from_latlon STARE calc.
 *** geodata/sketchD.py    Stopwatch sketching, 
 
-*** geodata/sketchE.py    Try CCL.
+*** geodata/sketchE.py    Try CCL. Used both cv2 calls and ccl_marker_stack.
+ 
+* Details on performing CCL on the GOES bands
+** Choose a threshold
+** Eliminate the sky
+** OpenCV.connectedComponents works on uint8 (only?)

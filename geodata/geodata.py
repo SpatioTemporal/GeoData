@@ -173,6 +173,42 @@ def temporal_id_centered_from_filename(fname):
   else:
     return None
 
+def temporal_id_centered_filename_index(filenames):
+    index = {}
+    for entry in filenames:
+        tid = temporal_id_centered_from_filename(entry)
+        if tid not in index.keys():
+            index[tid] = [entry]
+        else:
+            index[tid].append(entry)
+    return index
+
+def temporal_match_to_merra2_ds(tid,m2ds):
+    fine_match = ps.cmp_temporal(np.array([tid],dtype=np.int64),merra2_stare_time(m2ds))
+    return fine_match
+
+def temporal_match_to_merra2(tid,m2_tid_index,dataPath=""):
+    gm2_match = ps.cmp_temporal(np.array([tid],dtype=np.int64),list(m2_tid_index.keys())) # TODO Could speed up this using sortedcontainers?
+    match_fnames = []
+    for i in range(gm2_match.size):
+        if gm2_match[i] == 1:
+            fine_match = temporal_match_to_merra2_ds(tid,Dataset(dataPath+m2_tid_index[list(m2_tid_index.keys())[i]][0]))
+            if 1 in fine_match:
+                match_fnames.append(m2_tid_index[list(m2_tid_index.keys())[i]][0])
+            else:
+                match_fnames.append(None)
+        else:
+            match_fnames.append(None)
+    # print(entry, ' entry,matches: ',gm2_match,match_fnames)
+    match_fnames_trimmed = []
+    for i in match_fnames:
+        if i is not None:
+            match_fnames_trimmed.append(i)
+    # print(entry,match_fnames_trimmed)
+    if(len(match_fnames_trimmed) > 1):
+        print('*** WARNING: more than one MERRA-2 file for the input tid file!!')
+    return match_fnames_trimmed
+
 def spatial_resolution(sid):
     return sid & 31 # levelMaskSciDB
 

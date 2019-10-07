@@ -1,0 +1,23 @@
+
+
+data_source:
+  directory: "/home/mrilee/data"
+  pattern:   "goes10.2005.349.03015.BAND.*"
+
+run:
+  action: "list"
+
+data_sources:
+  merra2:
+    directory: "/home/mrilee/data"
+    patterns:
+      - "MERRA*.nc4"
+
+  goes_gvar_img:
+    directory: "/home/mrilee/data"
+    patterns:
+      - "goes??.????.???.??????.BAND_??.nc"
+
+
+
+  
