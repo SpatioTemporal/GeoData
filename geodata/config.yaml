@@ -9,14 +9,19 @@ run:
 
 data_sources:
   merra2:
-    directory: "/home/mrilee/data"
+    directory: "/home/mrilee/data/"
     patterns:
       - "MERRA*.nc4"
 
   goes_gvar_img:
-    directory: "/home/mrilee/data"
+    directory: "/home/mrilee/data/"
     patterns:
       - "goes??.????.???.??????.BAND_??.nc"
+
+  goes_gvar_img_b5:
+    directory: "/home/mrilee/data/"
+    patterns:
+      - "goes??.????.???.??????.BAND_05.nc"
 
 
 
