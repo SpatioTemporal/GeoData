@@ -2,6 +2,8 @@
 import h5py as h5
 from ccl_marker_stack import ccl_marker_stack, imshow_components
 
+from stopwatch import sw_timer
+
 import numpy as np
 import cv2
 from ccl_marker_stack import ccl_marker_stack
@@ -20,10 +22,12 @@ data_filenames = [
     ,'sketchF1.0x007d5c689e80008a.h5'
 ]
 
-marker_stack = ccl_marker_stack() 
-
+marker_stack = ccl_marker_stack(global_latlon_grid=False)
+ktr = 0
+sw_timer.stamp('starting datafile loop')
 # iDataFile = 0
 for iDataFile in range(len(data_filenames)):
+    sw_timer.stamp('datafile loop iteration %d'%ktr)
 
     print('adding ',data_filenames[iDataFile])
     
@@ -37,8 +41,9 @@ for iDataFile in range(len(data_filenames)):
     ny = workFile['/image_description']['ny']
     g_img       = workFile['/image']['goes_b5']
 
-    print('nx,ny: ',nx,ny)
+    # print('nx,ny: ',nx,ny)
 
+    # Cropping for development & testing
     g_img = g_img.reshape([ny,nx])
     nx=500; ny=500
     x0= 700; y0=200
@@ -71,29 +76,32 @@ for iDataFile in range(len(data_filenames)):
     
     # The following two also work
     if True:
+        sw_timer.stamp('datafile loop at threshold, iteration %d'%ktr)
         ret,thresh  = cv2.threshold(data,d_trigger,d_out,cv2.THRESH_BINARY_INV) # less than, for g
         print('thresh ret:  ',type(ret),ret)
         print('thresh type: ',type(thresh),thresh.shape,np.amin(thresh),np.amax(thresh))
     
     if True:
         # Pass in data, ask for threshold
-        # marker_stack = ccl_marker_stack() 
+        # marker_stack = ccl_marker_stack(global_latlon_grid=False) 
         print('adding slice...')
+        sw_timer.stamp('datafile loop at make_slice_from, iteration %d'%ktr)
         m0_new,m1_new,m0_eol,translation01\
             = marker_stack.make_slice_from(
                 data
                 ,(d_trigger,d_out)
                 ,graph=False
                 ,thresh_inverse=True
-                ,global_latlon_grid=False
                 ,norm_data=False
                 ,perform_threshold=True)
         print('done adding slice.')
         markers=m1_new
         print('markers type,len ',type(markers),len(markers))
         # print('markers ',markers)
-    
+    sw_timer.stamp('datafile loop before close file, iteration %d'%ktr)    
     workFile.close()
+    sw_timer.stamp('datafile loop after close file, iteration %d'%ktr)
+    ktr = ktr + 1
 
     if False:
         nrows = 5
@@ -108,22 +116,26 @@ for iDataFile in range(len(data_filenames)):
         axs[4].imshow(imshow_components(markers))
         plt.show()
 
+sw_timer.stamp('before resolve labels across stack')
 m_results_translated = marker_stack.resolve_labels_across_stack()
-print('m_results_translated len:  ',len(m_results_translated))
-print('m_results_translated typ:  ',type(m_results_translated))
-print('m_results_translated typ1: ',type(m_results_translated[0]))
-print('m_results_translated typ2: ',type(m_results_translated[0][0,0]))
+sw_timer.stamp('after resolve labels across stack')
+# print('m_results_translated len:  ',len(m_results_translated))
+# print('m_results_translated typ:  ',type(m_results_translated))
+# print('m_results_translated typ1: ',type(m_results_translated[0]))
+# print('m_results_translated typ2: ',type(m_results_translated[0][0,0])) # np.int32
+sw_timer.stamp('program done')
 
-nrows = len(m_results_translated)+1
-fig,axs = plt.subplots(nrows=nrows)
-for row in range(nrows):
-    axs[row].get_xaxis().set_visible(False)
-    axs[row].get_yaxis().set_visible(False)
-for row in range(nrows-1):
-    axs[row].imshow(m_results_translated[row])
-axs[-1].imshow(g_img.reshape([ny,nx]))
-print('plotting final')
-plt.show()
 
+if False:
+    nrows = len(m_results_translated)+1
+    fig,axs = plt.subplots(nrows=nrows)
+    for row in range(nrows):
+        axs[row].get_xaxis().set_visible(False)
+        axs[row].get_yaxis().set_visible(False)
+    for row in range(nrows-1):
+        axs[row].imshow(m_results_translated[row])
+    axs[-1].imshow(g_img.reshape([ny,nx]))
+    print('plotting final')
+    plt.show()
     
-    
+print(sw_timer.report_all())
