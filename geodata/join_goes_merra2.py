@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 
 import h5py as h5
 from netCDF4 import Dataset
@@ -8,33 +8,9 @@ import json
 from sortedcontainers import SortedDict, SortedList
 
 import geodata as gd
-# import os,fnmatch
-import yaml
 
 def hex16(i):
     return "0x%016x"%i
-
-with open("config.yaml") as f:
-    config = yaml.load(f,Loader=yaml.FullLoader)
-    # print(config)
-    # print('')
-    # if config['run']['action'] == "list":
-    #     print("%s %s"%("list",config['data_source']['directory']))
-
-goes_b5_catalog = gd.data_catalog(config['data_sources']['goes_gvar_img_b5'])
-goes_files = goes_b5_catalog.get_files()
-
-m2_catalog = gd.data_catalog(config['data_sources']['merra2'])
-m2_files = m2_catalog.get_files()
-m2_tid_index = m2_catalog.get_tid_centered_index()
-
-for entry in goes_files:
-    gtid = gd.temporal_id_centered_from_filename(entry)
-    m2_match = m2_catalog.find(gtid)
-    print('matched pair: 0x%016x % 40s % 40s'%(gtid,entry,m2_match))
-    # print('matched pair: 0x%016x % 40s % 40s'%(gtid,entry,gd.temporal_match_to_merra2(gtid,m2_tid_index,dataPath=m2_catalog.config['directory'])[0]))
-
-###########################################################################
 
 class join_value(object):
     def __init__(self):
@@ -220,12 +196,8 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
     workFile['/image']['merra2_src_coord'] = m2_src_coord_h5.flatten()
     workFile['/image']['merra2_tpw']       = m2_tpw_h5.flatten()
 
-    # oops
-    # workFile['/image_description']['nx'] = goes_ds['data'].shape[1]
-    # workFile['/image_description']['ny'] = goes_ds['data'].shape[2]
     workFile['/image_description']['nx'] = goes_ds['data'].shape[2]
     workFile['/image_description']['ny'] = goes_ds['data'].shape[1]
-    print('image nx,ny: ',goes_ds['data'].shape[2],goes_ds['data'].shape[1])
 
     workFile['/merra2_description']['nx'] = 576
     workFile['/merra2_description']['ny'] = 361
@@ -236,7 +208,7 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
     # workFile['/image']['goes_b4'] = goes_ds['data'][0,:,:].flatten()
 
     while igoes < len(goes_filenames_valid):
-        print(i,' saving ',goes_bandname,' from file ',goes_filenames_valid[igoes])
+        print(igoes,' saving ',goes_bandname,' from file ',goes_filenames_valid[igoes])
         workFile['/image'][goes_bandname] = goes_ds['data'][0,:,:].flatten()
         goes_ds.close()
         igoes = igoes + 1
@@ -249,25 +221,3 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
     workFile.close()
 
     return
-
-### GOES DATASET
-goes_b5_dataPath = "/home/mrilee/data/"
-goes_b5_dataFile = "goes10.2005.349.003015.BAND_05.nc"
-goes_b5_fqFilename = goes_b5_dataPath+goes_b5_dataFile
-
-### MERRA 2 DATASET
-dataPath   = "/home/mrilee/data/"
-dataFile   = "MERRA2_300.tavg1_2d_slv_Nx.20051215.nc4"
-fqFilename = dataPath+dataFile
-
-join_goes_and_m2_to_h5(
-    "/home/mrilee/data/"
-    ,["goes10.2005.349.003015.BAND_03.nc","goes10.2005.349.003015.BAND_04.nc","goes10.2005.349.003015.BAND_05.nc"]
-    ,"/home/mrilee/data/"
-    ,"MERRA2_300.tavg1_2d_slv_Nx.20051215.nc4"
-    ,"sketchF.h5")
-
-
-
-
-

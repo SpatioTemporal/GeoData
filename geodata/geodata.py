@@ -272,6 +272,9 @@ class data_catalog(object):
             print('*ERROR* data_catalog.find not implemented for ',self.config['patterns'])
         return []
 
+def hex16(i):
+    return "0x%016x"%i
+
 # def data_catalog_from_yaml(filename):
 #     with open(filename) as f:
 #         return data_catalog(yaml.load(f,Loader=yaml.FullLoader))

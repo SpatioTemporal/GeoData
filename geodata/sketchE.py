@@ -16,7 +16,8 @@ import cartopy.crs as ccrs
 import cv2
 from ccl_marker_stack import ccl_marker_stack
 
-workFileName = "work.h5"
+# workFileName = "work.h5"
+workFileName = "sketchF.h5"
 #workFile     = h5.File(workPath+workFileName,'r')
 workFile     = h5.File(workFileName,'r')
 
@@ -25,6 +26,8 @@ tpw_offset = workFile['/merra2_description']['tpw_offset']
 print('tpw scale offset: ',tpw_scale,tpw_offset)
 
 b5_img = workFile['/image']['goes_b5']
+# b5_img = workFile['/image']['goes_b4']
+# b5_img = workFile['/image']['goes_b3']
 print('b5 mnmx: ',np.amin(b5_img),np.amax(b5_img))
 
 # m2_img = workFile['/image']['merra2_tpw']
@@ -33,7 +36,8 @@ print('m2 mnmx: ',np.amin(m2_img),np.amax(m2_img))
 
 # b5_lo,b5_threshold = (7500.0,15000.0)
 # b5_lo,b5_threshold = (7500.0,12500.0)
-b5_lo,b5_threshold = (0.0,8000.0)
+b5_lo,b5_threshold = (0.0,8000.0) # b5
+# b5_lo,b5_threshold = (0.0,5000.0) # b3
 # b5_lo,b5_threshold = (1000.0,8000.0)
 
 b5_img_ge2_idx = np.where((b5_img <= b5_threshold) & (b5_img>b5_lo)) # This is where TPW is high and b5 is low.
@@ -69,34 +73,9 @@ print('d mnmx:  ',np.amin(data),np.amax(data))
 if False:
     cv2.imshow('data',data); cv2.waitKey(0); cv2.destroyAllWindows()
 
-if False:
-    cv2.imshow('thresh',thresh); cv2.waitKey(0); cv2.destroyAllWindows()
-
 # This works
-if False:
+if True:
     # Pass in external threshold
-    marker_stack = ccl_marker_stack() 
-    m0_new,m1_new,m0_eol,translation01\
-        = marker_stack.make_slice_from(
-            thresh
-            ,(d_trigger,d_out)
-            ,graph=False
-            ,thresh_inverse=True
-            ,global_latlon_grid=False
-            ,norm_data=False
-            ,perform_threshold=False)
-    markers=m1_new
-    print('markers type,len ',type(markers),len(markers))
-    # print('markers ',markers)
-
-# The following two also work
-if True:
-    ret,thresh  = cv2.threshold(data,d_trigger,d_out,cv2.THRESH_BINARY_INV) # less than, for b5
-    print('thresh ret:  ',type(ret),ret)
-    print('thresh type: ',type(thresh),thresh.shape,np.amin(thresh),np.amax(thresh))
-
-if True:
-    # Pass in data, ask for threshold
     marker_stack = ccl_marker_stack() 
     m0_new,m1_new,m0_eol,translation01\
         = marker_stack.make_slice_from(
@@ -111,6 +90,30 @@ if True:
     print('markers type,len ',type(markers),len(markers))
     # print('markers ',markers)
 
+thresh = None
+
+# The following two also work
+if False:
+    ret,thresh  = cv2.threshold(data,d_trigger,d_out,cv2.THRESH_BINARY_INV) # less than, for b5
+    print('thresh ret:  ',type(ret),ret)
+    print('thresh type: ',type(thresh),thresh.shape,np.amin(thresh),np.amax(thresh))
+    # Pass in data, ask for threshold
+    marker_stack = ccl_marker_stack() 
+    m0_new,m1_new,m0_eol,translation01\
+        = marker_stack.make_slice_from(
+            thresh
+            ,(d_trigger,d_out)
+            ,graph=False
+            ,thresh_inverse=True
+            ,global_latlon_grid=False
+            ,norm_data=False
+            ,perform_threshold=False)
+    markers=m1_new
+    print('markers type,len ',type(markers),len(markers))
+    # print('markers ',markers)
+
+if False:
+    cv2.imshow('thresh',thresh); cv2.waitKey(0); cv2.destroyAllWindows()
 
 if False:
     ret,markers = cv2.connectedComponents(thresh)
@@ -129,7 +132,6 @@ if False:
 
 # https://stackoverflow.com/questions/46441893/connected-component-labeling-in-python
 # For fun viz.
-
 def imshow_components(labels):
     # Map component labels to hue val
     label_hue = np.uint8(179*labels/np.max(labels))
@@ -154,7 +156,8 @@ for row in range(nrows):
 
 axs[0].imshow(b5_img.reshape(nx,ny))
 axs[1].imshow(data)
-axs[2].imshow(thresh)
+if thresh is not None:
+    axs[2].imshow(thresh)
 axs[3].imshow(markers)
 axs[4].imshow(imshow_components(markers))
 plt.show()
