@@ -12,8 +12,14 @@ import matplotlib.tri as tri
 import cartopy.crs as ccrs
 
 workFileName = "work.h5"
-#workFile     = h5.File(workPath+workFileName,'r')
+# workFileName = "sketchF.h5"
+# workFileName = "sketchF1.0x007d5c684080008a.h5"
+# workFileName = "sketchF1.0x007d5c685e80008a.h5"
+# workFileName = "sketchF1.0x007d5c688080008a.h5"
+# workFileName = "sketchF1.0x007d5c689e80008a.h5"
 workFile     = h5.File(workFileName,'r')
+
+#workFile     = h5.File(workPath+workFileName,'r')
 
 # for i in range(10):
 #     print(i,hex(workFile['/image']['stare_temporal'][i]))
@@ -31,7 +37,7 @@ print('(nx,ny): ',(nx,ny))
 
 fig, (ax0,ax1) = plt.subplots(nrows=2)
 
-b5_img = workFile['/image']['goes_b5'].reshape(nx,ny)
+b5_img = workFile['/image']['goes_b5'].reshape(ny,nx)
 print('b5 mnmx: ',np.amin(b5_img),np.amax(b5_img))
 ax0.set_title('b5')
 ax0.get_xaxis().set_visible(False)
@@ -42,8 +48,8 @@ tpw_scale  = workFile['/merra2_description']['tpw_scale']
 tpw_offset = workFile['/merra2_description']['tpw_offset']
 print('tpw scale offset: ',tpw_scale,tpw_offset)
 
-# m2_img = workFile['/image']['merra2_tpw'].reshape(nx,ny)
-m2_img = tpw_offset + tpw_scale*workFile['/image']['merra2_tpw'].reshape(nx,ny)
+# m2_img = workFile['/image']['merra2_tpw'].reshape(ny,nx)
+m2_img = tpw_offset + tpw_scale*workFile['/image']['merra2_tpw'].reshape(ny,nx)
 print('m2 mnmx: ',np.amin(m2_img),np.amax(m2_img))
 ax1.set_title('tpw')
 ax1.get_xaxis().set_visible(False)
@@ -58,6 +64,40 @@ ax.set_title('tpw')
 ax.get_xaxis().set_visible(False)
 ax.get_yaxis().set_visible(False)
 plt.imshow(m2_img)
+plt.show()
+
+
+fig, axs = plt.subplots(nrows=4)
+iax=0
+axs[iax].set_title('tpw')
+axs[iax].get_xaxis().set_visible(False)
+axs[iax].get_yaxis().set_visible(False)
+axs[iax].imshow(m2_img)
+
+iax=1
+b3_img = workFile['/image']['goes_b3'].reshape(ny,nx)
+print('b3 mnmx: ',np.amin(b3_img),np.amax(b3_img))
+axs[iax].set_title('b3')
+axs[iax].get_xaxis().set_visible(False)
+axs[iax].get_yaxis().set_visible(False)
+axs[iax].imshow(b3_img)
+
+iax=2
+b4_img = workFile['/image']['goes_b4'].reshape(ny,nx)
+print('b4 mnmx: ',np.amin(b4_img),np.amax(b4_img))
+axs[iax].set_title('b4')
+axs[iax].get_xaxis().set_visible(False)
+axs[iax].get_yaxis().set_visible(False)
+axs[iax].imshow(b4_img)
+
+iax=3
+#b5_img = workFile['/image']['goes_b5'].reshape(ny,nx)
+print('b5 mnmx: ',np.amin(b5_img),np.amax(b5_img))
+axs[iax].set_title('b5')
+axs[iax].get_xaxis().set_visible(False)
+axs[iax].get_yaxis().set_visible(False)
+axs[iax].imshow(b5_img)
+
 plt.show()
 
 workFile.close()

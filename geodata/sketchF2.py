@@ -43,14 +43,13 @@ for iDataFile in range(len(data_filenames)):
 
     # print('nx,ny: ',nx,ny)
 
-    # Cropping for development & testing
-    g_img = g_img.reshape([ny,nx])
-    nx=500; ny=500
-    x0= 700; y0=200
-    tmp  = np.zeros([ny,nx],dtype=np.int64)
-    tmp[:,:]  = g_img[y0:y0+ny,x0:x0+nx]
-    g_img = tmp.reshape([nx*ny])
-    # g_img = tmp.flatten()
+    ## # Cropping for development & testing
+    ## g_img = g_img.reshape([ny,nx])
+    ## nx=1000; ny=750
+    ## x0= 700; y0=200
+    ## tmp  = np.zeros([ny,nx],dtype=np.int64)
+    ## tmp[:,:]  = g_img[y0:y0+ny,x0:x0+nx]
+    ## g_img = tmp.reshape([nx*ny])
 
     g_lo        = 0.0
     g_threshold = 8000.0
@@ -83,7 +82,8 @@ for iDataFile in range(len(data_filenames)):
     
     if True:
         # Pass in data, ask for threshold
-        # marker_stack = ccl_marker_stack(global_latlon_grid=False) 
+        if True:
+            marker_stack = ccl_marker_stack(global_latlon_grid=False) 
         print('adding slice...')
         sw_timer.stamp('datafile loop at make_slice_from, iteration %d'%ktr)
         m0_new,m1_new,m0_eol,translation01\
@@ -115,6 +115,19 @@ for iDataFile in range(len(data_filenames)):
         axs[3].imshow(markers)
         axs[4].imshow(imshow_components(markers))
         plt.show()
+
+    if True:
+        nrows = 2
+        fig,axs = plt.subplots(nrows=nrows)
+        for row in range(nrows):
+            axs[row].get_xaxis().set_visible(False)
+            axs[row].get_yaxis().set_visible(False)
+        axs[0].set_title('GOES')
+        axs[0].imshow(g_img.reshape(ny,nx))
+        axs[1].set_title('CCL-LABELED')
+        axs[1].imshow(imshow_components(markers))
+        plt.show()
+
 
 sw_timer.stamp('before resolve labels across stack')
 m_results_translated = marker_stack.resolve_labels_across_stack()

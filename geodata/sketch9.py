@@ -17,7 +17,8 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 import cartopy.crs as ccrs
 
-viz_enable = False
+# viz_enable = False
+viz_enable = True
 start0 = timer()
 
 ### GOES DATASET
@@ -25,6 +26,17 @@ goes_b5_dataPath = "/home/mrilee/data/"
 goes_b5_dataFile = "goes10.2005.349.003015.BAND_05.nc"
 goes_b5_fqFilename = goes_b5_dataPath+goes_b5_dataFile
 goes_b5_ds = Dataset(goes_b5_fqFilename)
+
+goes_b3_dataPath = "/home/mrilee/data/"
+goes_b3_dataFile = "goes10.2005.349.003015.BAND_03.nc"
+goes_b3_fqFilename = goes_b3_dataPath+goes_b3_dataFile
+goes_b3_ds = Dataset(goes_b3_fqFilename)
+
+goes_b4_dataPath = "/home/mrilee/data/"
+goes_b4_dataFile = "goes10.2005.349.003015.BAND_04.nc"
+goes_b4_fqFilename = goes_b4_dataPath+goes_b4_dataFile
+goes_b4_ds = Dataset(goes_b4_fqFilename)
+
 
 g5shape = goes_b5_ds['data'].shape
 print('g5shape = ',g5shape)
@@ -256,13 +268,13 @@ print('join done, time23 = ',start3-start2)
 workFile['/image']['stare_spatial'] = goes_b5_indices[:]
 workFile['/image']['stare_temporal'] = gd.goes10_img_stare_time(goes_b5_ds)[0]
 workFile['/image']['goes_src_coord'] = np.arange(g_lat.size,dtype=np.int64)
-workFile['/image']['goes_b3'] = goes_b5_ds['data'][0,:,:].flatten()
-workFile['/image']['goes_b4'] = goes_b5_ds['data'][0,:,:].flatten()
+workFile['/image']['goes_b3'] = goes_b3_ds['data'][0,:,:].flatten()
+workFile['/image']['goes_b4'] = goes_b4_ds['data'][0,:,:].flatten()
 workFile['/image']['goes_b5'] = goes_b5_ds['data'][0,:,:].flatten()
 workFile['/image']['merra2_src_coord'] = m2_src_coord_h5.flatten()
 workFile['/image']['merra2_tpw']       = m2_tpw_h5.flatten()
-workFile['/image_description']['nx'] = goes_b5_ds['data'].shape[1]
-workFile['/image_description']['ny'] = goes_b5_ds['data'].shape[2]
+workFile['/image_description']['nx'] = goes_b5_ds['data'].shape[2]
+workFile['/image_description']['ny'] = goes_b5_ds['data'].shape[1]
 workFile['/merra2_description']['nx'] = 576
 workFile['/merra2_description']['ny'] = 361
 workFile['/merra2_description']['tpw_offset'] = tpw_offset
@@ -304,4 +316,8 @@ if viz_enable:
     ax1.set_title('tpw')
     ax1.imshow(m2_img)
     plt.show()
+
+goes_b3_ds.close()
+goes_b4_ds.close()
+goes_b5_ds.close()
 
