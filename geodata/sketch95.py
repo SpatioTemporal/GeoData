@@ -197,7 +197,7 @@ for i in group:
 
 plt.plot(xdat,poly(xdat),c='black')
 plt.show()
-exit()
+# exit()
 
 plt.figure()
 plt.scatter(m2_ar,b45_ar,s=4,alpha=0.5)
@@ -298,7 +298,7 @@ plt.show()
 
 #
 
-exit()
+# exit()
 
 # Fit Gaussians here... Then can do a likelihood ratio...
 

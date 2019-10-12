@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 import cartopy.crs as ccrs
 
-workFileName = "work.h5"
+# workFileName = "work.h5"
+workFileName = "sketch9.2005.349.213015.h5"
 # workFileName = "sketchF.h5"
 # workFileName = "sketchF1.0x007d5c684080008a.h5"
 # workFileName = "sketchF1.0x007d5c685e80008a.h5"
@@ -99,5 +100,24 @@ axs[iax].get_yaxis().set_visible(False)
 axs[iax].imshow(b5_img)
 
 plt.show()
+
+fig, axs = plt.subplots(nrows=2)
+
+iax=0
+# b3_img = workFile['/image']['goes_b3'].reshape(ny,nx)
+# print('b3 mnmx: ',np.amin(b3_img),np.amax(b3_img))
+axs[iax].set_title('b4-b5')
+axs[iax].get_xaxis().set_visible(False)
+axs[iax].get_yaxis().set_visible(False)
+axs[iax].imshow(b4_img-b5_img)
+
+iax=1
+axs[iax].set_title('tpw')
+axs[iax].get_xaxis().set_visible(False)
+axs[iax].get_yaxis().set_visible(False)
+axs[iax].imshow(m2_img)
+
+plt.show()
+
 
 workFile.close()

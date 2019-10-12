@@ -46,6 +46,8 @@ Do we want to work with     intervals or points in time?
 *** geodata/sketchF1.py   Multi-file load and join, save to h5 files.
 *** geodata/sketchF2.py   Load h5 files and display to check.
 
+*** geodata/SketchG.py    Load MODIS data into an f-dataset
+*** geodata/SketchG0.py   Check the MODIS data in h5 format, including GRING
 
 * Details on performing CCL on the GOES bands
 ** Choose a threshold

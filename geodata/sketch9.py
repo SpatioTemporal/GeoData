@@ -21,22 +21,33 @@ import cartopy.crs as ccrs
 viz_enable = True
 start0 = timer()
 
+# DEPENDENCIES
+goes_base    = "goes10."
+
+# goes_time    = "2005.349.003015"
+# m2_base      = "MERRA2_300.tavg1_2d_slv_Nx.20051215.nc4"
+
+goes_time    = "2005.349.213015"
+m2_base      = "MERRA2_300.tavg1_2d_slv_Nx.20051215.nc4"
+
+workFileName = "sketch9."+goes_time+".h5"
+
 ### GOES DATASET
+goes_suffix = ".nc"
 goes_b5_dataPath = "/home/mrilee/data/"
-goes_b5_dataFile = "goes10.2005.349.003015.BAND_05.nc"
+goes_b5_dataFile = goes_base+goes_time+".BAND_05"+goes_suffix
 goes_b5_fqFilename = goes_b5_dataPath+goes_b5_dataFile
 goes_b5_ds = Dataset(goes_b5_fqFilename)
 
 goes_b3_dataPath = "/home/mrilee/data/"
-goes_b3_dataFile = "goes10.2005.349.003015.BAND_03.nc"
+goes_b3_dataFile = goes_base+goes_time+".BAND_03"+goes_suffix
 goes_b3_fqFilename = goes_b3_dataPath+goes_b3_dataFile
 goes_b3_ds = Dataset(goes_b3_fqFilename)
 
 goes_b4_dataPath = "/home/mrilee/data/"
-goes_b4_dataFile = "goes10.2005.349.003015.BAND_04.nc"
+goes_b4_dataFile = goes_base+goes_time+".BAND_04"+goes_suffix
 goes_b4_fqFilename = goes_b4_dataPath+goes_b4_dataFile
 goes_b4_ds = Dataset(goes_b4_fqFilename)
-
 
 g5shape = goes_b5_ds['data'].shape
 print('g5shape = ',g5shape)
@@ -48,7 +59,7 @@ goes_b5_tid = gd.goes10_img_stare_time(goes_b5_ds)
 
 ### MERRA 2 DATASET
 dataPath   = "/home/mrilee/data/"
-dataFile   = "MERRA2_300.tavg1_2d_slv_Nx.20051215.nc4"
+dataFile   = m2_base
 fqFilename = dataPath+dataFile
 m2_dLat    = 0.5
 m2_dLon    = 5.0/8.0
@@ -65,15 +76,16 @@ m2_indices = ps.from_latlon(m2_lat,m2_lon,m2_resolution)
 # m2_indices = ps.from_latlon(m2_lat,m2_lon,int(gd.resolution(m2_dLonkm*0.5)))
 m2_tid     = gd.merra2_stare_time(m2_ds)
 
-print('type(m2_indices): ',type(m2_indices))
+print('type(m2_indices):  ',type(m2_indices))
 print('shape(m2_indices): ',m2_indices.shape)
-print('size(m2_indices): ',m2_indices.size)
-print('type(g5 tid): ',type(goes_b5_tid))
-print('g5 tid.shape: ',goes_b5_tid.shape)
-print('type(m2_tid): ',type(m2_tid))
-print('m2_tid.shape: ',m2_tid.shape)
+print('size(m2_indices):  ',m2_indices.size)
+print('type(g5 tid):      ',type(goes_b5_tid))
+print('g5 tid.shape:      ',goes_b5_tid.shape)
+print('type(m2_tid):      ',type(m2_tid))
+print('m2_tid.shape:      ',m2_tid.shape)
 fine_match = ps.cmp_temporal(np.array(goes_b5_tid,dtype=np.int64),m2_tid)
 m2_ifm     = np.nonzero(fine_match)[0]
+print('m2_ifm:            ',m2_ifm)
 
 m2_dataDayI     = m2_ds['TQI'][m2_ifm,:,:]
 m2_dataDayL     = m2_ds['TQL'][m2_ifm,:,:]
@@ -81,15 +93,15 @@ m2_dataDayV     = m2_ds['TQV'][m2_ifm,:,:]
 m2_dataDay      = m2_dataDayI + m2_dataDayL + m2_dataDayV
 m2_data         = m2_dataDay[:,:].T
 m2_data_flat    = m2_data.flatten()
-print('m2 data mnmx: ',np.amin(m2_data_flat),np.amax(m2_data_flat))
+print('m2 data mnmx:      ',np.amin(m2_data_flat),np.amax(m2_data_flat))
 
 start1 = timer()
 print('data load done, time = ', start1-start0)
 
 ### HDF5 SAVE DATASET
 # workPath     = "/home/mrilee/tmp/"
-workFileName = "work.h5"
-#workFile     = h5.File(workPath+workFileName,'w')
+# workFileName = "work.h5"
+# workFile     = h5.File(workPath+workFileName,'w')
 workFile     = h5.File(workFileName,'w')
 
 image_dtype = np.dtype([
@@ -141,7 +153,6 @@ print('len(g_idx_valid[0]): ',len(g_idx_valid[0]))
 goes_b5_indices = np.full(g_lat.shape,-1,dtype=np.int64)
 goes_b5_indices[g_idx_valid] = ps.from_latlon(g_lat[g_idx_valid],g_lon[g_idx_valid],int(gd.resolution(goes_b5_ds['elemRes'][0])))
 #-# goes_b5_indices[g_idx_invalid] = -1
-
 
 ### Join the M2 data
 # print('len(g_idx_valid[0]): ',len(g_idx_valid[0]))

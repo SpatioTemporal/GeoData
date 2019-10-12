@@ -280,14 +280,54 @@ def hex16(i):
 #         return data_catalog(yaml.load(f,Loader=yaml.FullLoader))
 #     return None
 
-
-
 # def make_hull(lat0,lon0,resolution0,ntri0):
 #     hull0 = ps.to_hull_range_from_latlon(lat0,lon0,resolution0,ntri0)
 #     lath0,lonh0,lathc0,lonhc0 = ps.to_vertices_latlon(hull0)
 #     lons0,lats0,intmat0 = triangulate1(lath0,lonh0)
 #     triang0 = tri.Triangulation(lons0,lats0,intmat0)
 #     return lats0,lons0,triang0,hull0
+
+###########################################################################
+# https://gis.stackexchange.com/questions/328535/opening-eos-netcdf4-hdf5-file-with-correct-format-using-xarray
+#
+from collections import OrderedDict
+#
+def parse_hdfeos_metadata(string):
+#  print('*********************************')
+#  print('string: ',string)
+#  print('')
+  out = OrderedDict()
+  lines0 = [i.replace('\t','') for i in string.split('\n')]
+  lines = []
+  for l in lines0:
+      if "=" in l:
+          key,value = l.split('=')
+          lines.append(key.strip()+'='+value.strip())
+      else:
+          lines.append(l)
+
+  i = -1
+  while i<(len(lines))-1:
+      i+=1
+      line = lines[i]
+      if "=" in line:
+          key,value = line.split('=')
+#          print('key: "%s"'%key)
+          if key in ['GROUP','OBJECT']:
+              endIdx = lines.index('END_{}={}'.format(key,value))
+              out[value] = parse_hdfeos_metadata("\n".join(lines[i+1:endIdx]))
+              i = endIdx
+          else:
+#              print('.')
+              if ('END_GROUP' not in key) and ('END_OBJECT' not in key):
+                  out[key] = str(value)
+                  # try:
+                  #     out[key] = eval(value)
+                  # except NameError:
+                  #     out[key] = str(value)
+  return out
+########
+
 
 if __name__ == '__main__':
 
