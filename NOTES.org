@@ -4,7 +4,7 @@
 
 (insert (concat "\n" (shell-command-to-string "ls geodata/* | grep -v \\~ ")))
 
-*** geodata/geodata.py    The main module.
+*** geodata/geodata.py    The main module of support routines.
 
 *** geodata/sketch1.py    Load GOES IMG Band 5 data (NetCDF4)
 *** geodata/sketch10.py   Load GOES SNDR Band 7 data

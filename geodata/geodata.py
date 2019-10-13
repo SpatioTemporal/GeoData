@@ -1,4 +1,9 @@
 
+
+# Routines applying STARE to various Earth Science data sets.
+
+# geodata.py
+
 import datetime as dt
 
 from math import modf
@@ -17,7 +22,16 @@ import os, fnmatch
 import yaml
 import unittest
 
+try:
+    from .modis_coarse_to_fine_geolocation import modis_5km_to_1km_geolocation as pascal_modis
+except ImportError:
+    from modis_coarse_to_fine_geolocation import modis_5km_to_1km_geolocation as pascal_modis
 
+from collections import OrderedDict
+
+###########################################################################
+# A few constants
+#
 re_km = 6371.0 # radius earth km
 deg_per_rad = 180.0/np.pi
 
@@ -288,11 +302,15 @@ def hex16(i):
 #     return lats0,lons0,triang0,hull0
 
 ###########################################################################
+#
+# HDFEOS & MODIS SUPPORT
+#
+
+###########################################################################
 # https://gis.stackexchange.com/questions/328535/opening-eos-netcdf4-hdf5-file-with-correct-format-using-xarray
 #
-from collections import OrderedDict
-#
 def parse_hdfeos_metadata(string):
+  "Parse an extracted HDFEOS metadata string."
 #  print('*********************************')
 #  print('string: ',string)
 #  print('')
@@ -328,6 +346,21 @@ def parse_hdfeos_metadata(string):
   return out
 ########
 
+def with_hdf_get(h,var):
+    "Select off and get a var, for convenience."
+    sds = hdf.select(var)
+    ret = sds.get()
+    sds.endaccess()
+    return ret
+
+def modis_cover_from_gring(h,resolution=7,ntri_max=1000):
+    "Read ArchiveMetadata.0 from file and extract GRING, creating STARE spatial cover."
+    archive_metadata = h.attributes()['ArchiveMetadata.0']
+    metadata = parse_hdfeos_metadata(archive_metadata)
+    gring_seq=np.array(eval(metadata['ARCHIVEDMETADATA']['GPOLYGON']['GPOLYGONCONTAINER']['GRINGPOINT']['GRINGPOINTSEQUENCENO']['VALUE'])[:],dtype=np.int)-1
+    gring_lon=np.array(eval(metadata['ARCHIVEDMETADATA']['GPOLYGON']['GPOLYGONCONTAINER']['GRINGPOINT']['GRINGPOINTLONGITUDE']['VALUE'])[:],dtype=np.double)
+    gring_lat=np.array(eval(metadata['ARCHIVEDMETADATA']['GPOLYGON']['GPOLYGONCONTAINER']['GRINGPOINT']['GRINGPOINTLATITUDE']['VALUE'])[:],dtype=np.double)
+    return ps.to_hull_range_from_latlon(gring_lat[gring_seq],gring_lon[gring_seq],resolution,ntri_max)
 
 if __name__ == '__main__':
 

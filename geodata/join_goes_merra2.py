@@ -43,7 +43,7 @@ class join_value(object):
         return str
 
 def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name,workFileName):
-
+    "Join goes files with a particular m2_file."
     ##### HDF5 Data types for output
     image_dtype = np.dtype([
         ('stare_spatial',np.int64)
@@ -80,8 +80,9 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
         print("*ERROR* Join and save -- no valid GOES filenames. Returning.")
         return
 
-    # print('goes_filenames:       ',goes_filenames)
+    print('goes_filenames:       ',goes_filenames)
     # print('goes_filenames_valid: ',goes_filenames_valid)
+    print('m2_file_name          ',m2_file_name)
 
     ###########################################################################
     ##### MERRA-2
@@ -112,15 +113,30 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
 
     ##### MERRA-2 at the GOES time
     fine_match = ps.cmp_temporal(np.array(goes_tid,dtype=np.int64),m2_tid)
+    # print('fine_match: ',fine_match)
+    # print('gtid:       ',[hex16(i) for i in goes_tid])
+    # print('m2_tid:     ',[hex16(i) for i in m2_tid])
     m2_ifm     = np.nonzero(fine_match)[0]
-    m2_dataDayI     = m2_ds['TQI'][m2_ifm,:,:]
-    m2_dataDayL     = m2_ds['TQL'][m2_ifm,:,:]
-    m2_dataDayV     = m2_ds['TQV'][m2_ifm,:,:]
+    # print('m2_ifm: ',m2_ifm)
+    if m2_ifm.size == 1:
+        m2_dataDayI     = m2_ds['TQI'][m2_ifm,:,:]
+        m2_dataDayL     = m2_ds['TQL'][m2_ifm,:,:]
+        m2_dataDayV     = m2_ds['TQV'][m2_ifm,:,:]
+    else:
+        m2_dataDayI     = np.mean(m2_ds['TQI'][m2_ifm,:,:],0)
+        m2_dataDayL     = np.mean(m2_ds['TQL'][m2_ifm,:,:],0)
+        m2_dataDayV     = np.mean(m2_ds['TQV'][m2_ifm,:,:],0)
+        
     m2_dataDay      = m2_dataDayI + m2_dataDayL + m2_dataDayV
+    # print('m2_dataDay.shape: ',m2_dataDay.shape)
     m2_data         = m2_dataDay[:,:].T
+    # print('m2_data.shape:    ',m2_data.shape)
     m2_data_flat    = m2_data.flatten()
+    # print('m2_data.flat.sh:  ',m2_data_flat.shape)
 
     g_lat = goes_ds['lat'][:,:].flatten()
+    # print('gds lat shape: ',goes_ds['lat'][:,:].shape)
+    # print('gds lat fltsh: ',g_lat.shape)
     g_lon = goes_ds['lon'][:,:].flatten()
     g_idx_valid = np.where((g_lat>=-90.0) & (g_lat<=90.0))
     g_idx_invalid = np.where(((g_lat<-90.0) | (g_lat>90.0)))
@@ -162,15 +178,17 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
     ###########################################################################
     ##### JOIN
 
+    # TODO Add metadata for traceability.
+
     jkeys=join.keys()
     ktr = 0; nktr = len(jkeys) # gd_idx_valid is a tuple with one element
-    dktr = nktr/10.0
+    ktr_max = nktr
     elements_pushed = 0
     print('Push joined m2 data into the dataset n = ',nktr)
     for k in range(nktr):
         ktr = ktr + 1
-        if (ktr % int(dktr)) == 0:
-            print(int((10.0*ktr)/dktr),'% complete, ',elements_pushed,' elements pushed.')
+        if int(100.0*ktr/ktr_max) % 5 == 0 or int(100*ktr/ktr_max) < 2:
+            print('join_goes_merra2: %2d%% complete, %d elements pushed.'%(int(100*ktr/ktr_max),elements_pushed),end='\r',flush=True)
         sid = jkeys[k]
         if join[sid].contains(goes_bandname):
             if join[sid].contains('m2'):
@@ -180,7 +198,8 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
                 avg = (np.mean(m2_data_flat[join[sid].get('m2')])-tpw_offset)/tpw_scale
                 m2_tpw_h5[join[sid].get(goes_bandname)]       = avg
                 elements_pushed = elements_pushed + len(join[sid].get(goes_bandname))
-
+    print('join_goes_merra2: done, %d elements pushed.           '%(elements_pushed),flush=True)
+    print('')
 
     ###########################################################################
     ##### HDF5 SAVE DATASET

@@ -11,13 +11,22 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 import cartopy.crs as ccrs
 
+workDir = "/home/mrilee/opt/src/mrilee/git/Fumarole/fumarole/"
+# workFileName = workDir+"sketch0.0x007d5c681ebc008a.h5" # ok
+workFileName = workDir+"sketch0.0x007d5c6840bc008a.h5" # bad merra2?
+# workFileName = workDir+"sketch0.0x007d5c685ebc008a.h5" # ok
+# workFileName = workDir+"sketch0.0x007d5c6880bc008a.h5" # bad
+# workFileName = workDir+"sketch0.0x007d5c689ebc008a.h5" # ok
+
+# LOCAL FILES
 # workFileName = "work.h5"
-workFileName = "sketch9.2005.349.213015.h5"
+# workFileName = "sketch9.2005.349.213015.h5"
 # workFileName = "sketchF.h5"
 # workFileName = "sketchF1.0x007d5c684080008a.h5"
 # workFileName = "sketchF1.0x007d5c685e80008a.h5"
 # workFileName = "sketchF1.0x007d5c688080008a.h5"
 # workFileName = "sketchF1.0x007d5c689e80008a.h5"
+print('sketch90 loading ',workFileName)
 workFile     = h5.File(workFileName,'r')
 
 #workFile     = h5.File(workPath+workFileName,'r')
