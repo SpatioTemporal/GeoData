@@ -32,7 +32,7 @@ Do we want to work with     intervals or points in time?
 *** geodata/sketch94a.py  Load h5 data, like 92, but display image masked by b5 with various thresholds
 
 *** geodata/sketch95.py   Load h5 data and try to compare b4-b5 against TPW
-
+Added root fitting to theoretical model that matches linear fit very well. Threshold of about -1850 found.
 *** geodata/sketchA.py    Check terminators at various resolutions, esp. 27.
 *** geodata/sketchB.py    Go over sortedcontainers and iterators.
 *** geodata/sketchC.py    DASK accelerates ps.from_latlon STARE calc.
@@ -41,6 +41,10 @@ Do we want to work with     intervals or points in time?
 *** Don't forget nx,ny <-> row,column, i.e. ny,nx...
 
 *** geodata/sketchE.py    Try CCL. Used both cv2 calls and ccl_marker_stack.
+*** geodata/sketchE0.py   Try to understand cv2.threshold
+*** geodata/sketchE1.py   Try CCL and tracking with multiple h5 files. Fixed the color mapping.
+*** geodata/sketchE2.py   Some clean up or refactoring of E1. CCL on b4-b5.
+*** geodata/sketchE3.py   Refactor CCL/Tracking as a class. Adds various h5 outputs including label resolution.
 *** geodata/sketchF.py    Try to make preprocessing into a callable function.
 *** geodata/sketchF0.py   Add visualization to check previous.
 *** geodata/sketchF1.py   Multi-file load and join, save to h5 files.

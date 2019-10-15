@@ -141,6 +141,10 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
     m2_dataDayL     = m2_ds['TQL'][m2_ifm,:,:]
     m2_dataDayV     = m2_ds['TQV'][m2_ifm,:,:]
     m2_dataDay      = m2_dataDayI + m2_dataDayL + m2_dataDayV
+    if m2_ifm.size > 1:
+        print('multiple hits on 2m')
+        m2_dataDay  = np.mean(m2_dataDay,axis=1)
+        print('m2_dataDay shape: ',n2_dataDay.shape)
     m2_data         = m2_dataDay[:,:].T
     m2_data_flat    = m2_data.flatten()
 
