@@ -22,7 +22,9 @@ class stopwatch(object):
             self.iteration[name] = self.iteration[name] + 1
             self.names["%s(%i)"%(name,self.iteration[name])] = len(self.timestamps)
 
-    def stamp(self,name):
+    def stamp(self,name=None):
+        if name is None:
+            name = "stamp-%s"%len(self.names.keys())
         self.add_name(name)
         self.timestamps.append(self._timer())
         return self.timestamps[-1]
