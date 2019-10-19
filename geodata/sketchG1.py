@@ -62,6 +62,9 @@ class data_entry(object):
         self.datum = datum
         return
 
+    def as_tuple(self):
+        return (self.sid,self.datum)
+
 class catalog_entry(object):
     def __init__(self,sid):
         self.data = {}
@@ -78,6 +81,7 @@ class catalog_entry(object):
 class catalog(object):
     def __init__(self,resolution=None,sids=None):
         self.resolution = resolution
+        self.result_size_limit = 4096
         self.sdict      = SortedDict()
         if sids is not None:
             for s in sids:
@@ -100,7 +104,7 @@ class catalog(object):
         "Open a catalog entry, if it's not there. Expand sid, if needed."
         sidl=[sid]
         if self.resolution is not None:
-            sidl = ps.expand_intervals(sidl,self.resolution)
+            sidl = ps.expand_intervals(sidl,self.resolution,self.result_size_limit)
         for s in sidl:
             if s not in self.sdict.keys():
                 self.sdict[s] = catalog_entry(s) # construct with appropriate resolution
@@ -119,7 +123,7 @@ class catalog(object):
             self.add(key,sid,datum)
         return entry_open
 
-    def get_all_data(self,key):
+    def get_all_data(self,key,interpolate=False):
         ret = []
         for s in self.sdict.keys():
             try:
@@ -190,6 +194,10 @@ def main():
     data = workFile['/image']['Water_Vapor_Near_Infrared']
     workFile.close()
 
+    modis_min = np.amin(data)
+    modis_max = np.amax(data)
+    sids = sids-1
+
     ###########################################################################
     # GOES
     
@@ -202,14 +210,26 @@ def main():
     print('goes mnmx: ',np.amin(goes_data),np.amax(goes_data))
     goes_min = np.amin(goes_data)
     goes_max = np.amax(goes_data)
+    goes_sids = goes_sids-1
 
     ###########################################################################
     # HI 28.5N 177W
-    cover = ps.to_circular_cover(   28.5
-                                 ,-177.0
-                                 ,   2.0
-                                 ,   7)
-    cover_cat = catalog(resolution=7,sids=cover)
+    cover_resolution = 11
+    cover_lat =   19.5-0.375
+    cover_lon = -155.5+0.375
+    cover_rad = 2.0
+    
+    cover = ps.to_circular_cover(
+        cover_lat
+        ,cover_lon
+        ,cover_rad
+        ,cover_resolution
+        ,range_size_limit=2000)
+
+    cover_cat = catalog(resolution=11,sids=cover)
+    cover_sids_min = np.amin(cover)
+    cover_sids_max = np.amax(cover) # Need to convert to terminator
+    cover_sids_max = gd.spatial_terminator(cover_sids_max)
     # for k in list(cover_cat.sdict.keys()):
     #     print('cc: ',hex(k))
 
@@ -220,22 +240,29 @@ def main():
     for i in range(10):
         while(goes_sids[k]<0):
             k=k+1
-        print('adding: ','0x%016x'%goes_sids[k],k)
+        # print('adding: ','0x%016x'%goes_sids[k],k)
         gm_catalog.add('goes',goes_sids[k],goes_data[k])
         k=k+1
 
     for i in range(10):
-        print('adding: ','0x%016x'%sids[i])
+        # print('adding: ','0x%016x'%sids[i])
         gm_catalog.add('modis',sids[i],data[i])
 
     k = 0
     # for i in range(10):
-    for k in range(len(goes_sids)):
+    idx = np.arange(goes_sids.size)[np.where( (goes_sids > cover_sids_min) & (goes_sids < cover_sids_max))]
+    for k in range(len(idx)):
         # while(goes_sids[k]<0):
         #    k=k+1
-        if goes_sids[k] > 0:
-            cover_cat.add_to_entry('goes',goes_sids[k],goes_data[k])
+        if goes_sids[idx[k]] > 0:
+            cover_cat.add_to_entry('goes',goes_sids[idx[k]],goes_data[idx[k]])
         # k=k+1
+
+    idx = np.arange(sids.size)[np.where( (sids > cover_sids_min) & (sids < cover_sids_max))]
+    for k in range(len(idx)):
+        if sids[idx[k]] > 0:
+            cover_cat.add_to_entry('modis',sids[idx[k]],data[idx[k]])
+
 
     # print(yaml.dump(gm_catalog))
     # exit()
@@ -243,69 +270,172 @@ def main():
     ###########################################################################
     # Plotting
 
-    print('plotting')
+    nrows = 1
+    ncols = 3
     proj   = ccrs.PlateCarree()
     # proj   = ccrs.Mollweide()
     # proj   = ccrs.Mollweide(central_longitude=-160.0)
     transf = ccrs.Geodetic()
+
+# https://stackoverflow.com/questions/33942233/how-do-i-change-matplotlibs-subplot-projection-of-an-existing-axis
+    # plt.figure()
+    fig,axs = plt.subplots(nrows=nrows,ncols=ncols,subplot_kw={'projection': proj})
+
+    goes_line          = [False,False,False]
+    modis_line         = [False,False,False]
+    cover_plot         = [True, True, True ]
+    goes_plot_1        = [True, False,True ]
+    goes_plot_1_points = [True, False,True ]
+    modis_plot_1       = [False,True, True ]
+    plt_show_1         = [False,False,True ]
+
+    goes_line          = [False,False,False]
+    modis_line         = [False,False,False]
+    cover_plot         = [False, True, True ]
+    goes_plot_1        = [True, False,True ]
+    goes_plot_1_points = [False, False,False ]
+    modis_plot_1       = [False,True, True ]
+    plt_show_1         = [True,False,True ]
     
-    sw_timer.stamp()
-    plt.figure()
-    ax = plt.axes(projection=proj)
-    ax.set_title('MODIS STARE Test')
-    ax.set_global()
-    ax.coastlines()
 
-    if False:
-        # k = gm_catalog.sdict.keys()[0]
-        # for k in gm_catalog.sdict.keys():
-        for i in range(0,3):
-            k = gm_catalog.sdict.peekitem(i)[0]
-            triang = gm_catalog.sdict[k].geometry.triang()
-            plt.triplot(triang,'r-',transform=transf,lw=1,markersize=3)
 
-    if True:
-        lli = ps.triangulate_indices(cover)
-        plt.triplot(tri.Triangulation(lli[0],lli[1],lli[2])
-                    ,'g-',transform=transf,lw=1,markersize=3)
+    subplot_title = [
+        "ROI+GOES"
+        ,"ROI+MODIS"
+        ,"ROI+GOES+MODIS"
+    ]
+    
+    iter = 0
 
-    if True:
-        cc_data = cover_cat.get_all_data('goes')
-        # print('a100: ',cc_data)
-        for cd in cc_data:
-            lli    = ps.triangulate_indices([cd.sid])
-            triang = tri.Triangulation(lli[0],lli[1],lli[2])
-            cd_plt = np.array([cd.datum])
-            plt.triplot(triang,'r-',transform=transf,lw=1,markersize=3,alpha=0.5)
-            plt.tripcolor(triang,facecolors=cd_plt,vmin=goes_min,vmax=goes_max,cmap='rainbow')
+    for i in range(3):
+        iter = i
+        print('plotting iter ',iter)
+        
+        icol = iter
+        ax = axs[icol]
+        
+        ax.set_title(subplot_title[iter])
+        if False:
+            ax.set_global()
+        if True:
+            ax.coastlines()
+    
+        if False:
+            # k = gm_catalog.sdict.keys()[0]
+            # for k in gm_catalog.sdict.keys():
+            for i in range(0,3):
+                k = gm_catalog.sdict.peekitem(i)[0]
+                triang = gm_catalog.sdict[k].geometry.triang()
+                ax.triplot(triang,'r-',transform=transf,lw=1,markersize=3)
+    
+        if False:
+            lli = ps.triangulate_indices(cover)
+            ax.triplot(tri.Triangulation(lli[0],lli[1],lli[2])
+                        ,'g-',transform=transf,lw=1,markersize=3)
+    
+        if True:
+            if goes_plot_1[iter]:
+                cc_data = cover_cat.get_all_data('goes')
+                csids,sdat = zip(*[cd.as_tuple() for cd in cc_data])
+                glat,glon = ps.to_latlon(csids)
 
-        for i in range(0,10):
-            k = cover_cat.sdict.peekitem(i)[0]
-            triang = cover_cat.sdict[k].geometry.triang()
-            plt.triplot(triang,'b-',transform=transf,lw=1,markersize=3,alpha=0.5)
-            
+                csids_at_res = list(map(gd.spatial_clear_to_resolution,csids))
+                cc_data_accum = dict()
+                for cs in csids_at_res:
+                    cc_data_accum[cs] = []
+                for ics in range(len(csids_at_res)):
+                    cc_data_accum[csids_at_res[ics]].append(sdat[ics])
+                for cs in cc_data_accum.keys():
+                    if len(cc_data_accum[cs]) > 1:
+                        cc_data_accum[cs] = [sum(cc_data_accum[cs])/(1.0*len(cc_data_accum[cs]))]
+                tmp_values = np.array(list(cc_data_accum.values()))
+                vmin = np.amin(tmp_values)
+                vmax = np.amax(np.array(tmp_values))
 
-    if False:
-        sw_timer.stamp('triangulating')
-        print('triangulating')
-        client = Client()
-        for lli_ in slam(client,ps.triangulate_indices,sids):
-            sw_timer.stamp('slam iteration')
-            print('lli_ type: ',type(lli_))
-            lli = lli_.result()
-            sw_timer.stamp('slam result')
-            print('lli type:  ',type(lli))
-            triang = tri.Triangulation(lli[0],lli[1],lli[2])
-            sw_timer.stamp('slam triang')
-            plt.triplot(triang,'r-',transform=transf,lw=1.5,markersize=3,alpha=0.5)
-            sw_timer.stamp('slam triplot')
+                # print('a100: ',cc_data)
+                # print('cc_data       type: ',type(cc_data))
+                # print('cc_data[0]    type: ',type(cc_data[0]))
+                
+                for cs in cc_data_accum.keys():
+                    # print('item: ',hex(cs),cc_data_accum[cs])
+                    lli    = ps.triangulate_indices([cs])
+                    triang = tri.Triangulation(lli[0],lli[1],lli[2])
+                    cd_plt = np.array(cc_data_accum[cs])
+                    # print('cd_plt type ',type(cd_plt))
+                    # print('cd_plt shape ',cd_plt.shape)
+                    # print('cd_plt type ',type(cd_plt[0]))
+                    if goes_line[iter]:
+                        ax.triplot(triang,'r-',transform=transf,lw=3,markersize=3,alpha=0.5)
+                    # ax.tripcolor(triang,facecolors=cd_plt,vmin=goes_min,vmax=goes_max,cmap='Reds',alpha=0.4)
+                    ax.tripcolor(triang,facecolors=cd_plt,vmin=vmin,vmax=vmax,cmap='Reds',alpha=0.4)
+    
+                # for cd in cc_data:
+                #     lli    = ps.triangulate_indices([cd.sid])
+                #     triang = tri.Triangulation(lli[0],lli[1],lli[2])
+                #     cd_plt = np.array([cd.datum])
+                #     if goes_line[iter]:
+                #         ax.triplot(triang,'r-',transform=transf,lw=3,markersize=3,alpha=0.5)
+                #     ax.tripcolor(triang,facecolors=cd_plt,vmin=goes_min,vmax=goes_max,cmap='Reds',alpha=0.4)
+    
+            if modis_plot_1[iter]:
+                cc_data_m = cover_cat.get_all_data('modis')
+                csids,sdat = zip(*[cd.as_tuple() for cd in cc_data_m])
+                mlat,mlon = ps.to_latlon(csids)
+                for cd in cc_data_m:
+                    lli    = ps.triangulate_indices([cd.sid])
+                    triang = tri.Triangulation(lli[0],lli[1],lli[2])
+                    cd_plt = np.array([cd.datum])
+                    if modis_line[iter]:
+                        ax.triplot(triang,'b-',transform=transf,lw=1,markersize=3,alpha=0.5)
+                    ax.tripcolor(triang,facecolors=cd_plt,vmin=modis_min,vmax=modis_max,cmap='Blues',alpha=0.4)
+                ax.scatter(mlon,mlat,s=1,c='yellow')
 
-    sw_timer.stamp('plt show')
-    # lons,lats,intmat=ps.triangulate_indices(sids)
-    # triang = tri.Triangulation(lons,lats,intmat)
-    # plt.triplot(triang,'r-',transform=transf,lw=1.5,markersize=3)
+            if goes_plot_1[iter]:
+                if goes_plot_1_points[iter]:
+                    ax.scatter(glon,glat,s=1,c='black')
+    
+            if False:
+                for i in range(0,10):
+                    k = cover_cat.sdict.peekitem(i)[0]
+                    triang = cover_cat.sdict[k].geometry.triang()
+                    ax.triplot(triang,'b-',transform=transf,lw=1,markersize=3,alpha=0.5)
 
-    plt.show()
+            if cover_plot[iter]:
+                # lli = ps.triangulate_indices(ps.expand_intervals(cover,9,result_size_limit=2048))
+                lli = ps.triangulate_indices(cover)
+                ax.triplot(tri.Triangulation(lli[0],lli[1],lli[2])
+                           ,'g-',transform=transf,lw=1,markersize=3)
+                # plt.patches.Circle(cover_xy,radius=cover_radius)
+                phi=np.linspace(0,2*np.pi,64)
+                rad=cover_rad
+                ax.plot(cover_lon+rad*np.cos(phi),cover_lat+rad*np.sin(phi),transform=transf,color='White')
+
+            if plt_show_1[iter]:
+                plt.show()
+                
+###########################################################################
+#
+#    if False:
+#        sw_timer.stamp('triangulating')
+#        print('triangulating')
+#        client = Client()
+#        for lli_ in slam(client,ps.triangulate_indices,sids):
+#            sw_timer.stamp('slam iteration')
+#            print('lli_ type: ',type(lli_))
+#            lli = lli_.result()
+#            sw_timer.stamp('slam result')
+#            print('lli type:  ',type(lli))
+#            triang = tri.Triangulation(lli[0],lli[1],lli[2])
+#            sw_timer.stamp('slam triang')
+#            plt.triplot(triang,'r-',transform=transf,lw=1.5,markersize=3,alpha=0.5)
+#            sw_timer.stamp('slam triplot')
+#
+#    sw_timer.stamp('plt show')
+#    # lons,lats,intmat=ps.triangulate_indices(sids)
+#    # triang = tri.Triangulation(lons,lats,intmat)
+#    # plt.triplot(triang,'r-',transform=transf,lw=1.5,markersize=3)
+#
+#    plt.show()
 
     client.close()
 
