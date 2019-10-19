@@ -212,65 +212,11 @@ def main():
     goes_max = np.amax(goes_data)
     goes_sids = goes_sids-1
 
-    ###########################################################################
-    # HI 28.5N 177W
-    cover_resolution = 11
-    cover_lat =   19.5-0.375
-    cover_lon = -155.5+0.375
-    cover_rad = 2.0
-    
-    cover = ps.to_circular_cover(
-        cover_lat
-        ,cover_lon
-        ,cover_rad
-        ,cover_resolution
-        ,range_size_limit=2000)
-
-    cover_cat = catalog(resolution=11,sids=cover)
-    cover_sids_min = np.amin(cover)
-    cover_sids_max = np.amax(cover) # Need to convert to terminator
-    cover_sids_max = gd.spatial_terminator(cover_sids_max)
-    # for k in list(cover_cat.sdict.keys()):
-    #     print('cc: ',hex(k))
-
-    ###########################################################################
-    #
-    gm_catalog = catalog(resolution=7)
-    k=0
-    for i in range(10):
-        while(goes_sids[k]<0):
-            k=k+1
-        # print('adding: ','0x%016x'%goes_sids[k],k)
-        gm_catalog.add('goes',goes_sids[k],goes_data[k])
-        k=k+1
-
-    for i in range(10):
-        # print('adding: ','0x%016x'%sids[i])
-        gm_catalog.add('modis',sids[i],data[i])
-
-    k = 0
-    # for i in range(10):
-    idx = np.arange(goes_sids.size)[np.where( (goes_sids > cover_sids_min) & (goes_sids < cover_sids_max))]
-    for k in range(len(idx)):
-        # while(goes_sids[k]<0):
-        #    k=k+1
-        if goes_sids[idx[k]] > 0:
-            cover_cat.add_to_entry('goes',goes_sids[idx[k]],goes_data[idx[k]])
-        # k=k+1
-
-    idx = np.arange(sids.size)[np.where( (sids > cover_sids_min) & (sids < cover_sids_max))]
-    for k in range(len(idx)):
-        if sids[idx[k]] > 0:
-            cover_cat.add_to_entry('modis',sids[idx[k]],data[idx[k]])
-
-
-    # print(yaml.dump(gm_catalog))
-    # exit()
 
     ###########################################################################
     # Plotting
 
-    nrows = 1
+    nrows = 2
     ncols = 3
     proj   = ccrs.PlateCarree()
     # proj   = ccrs.Mollweide()
@@ -289,32 +235,101 @@ def main():
     modis_plot_1       = [False,True, True ]
     plt_show_1         = [False,False,True ]
 
-    goes_line          = [False,False,False]
-    modis_line         = [False,False,False]
-    cover_plot         = [False, True, True ]
-    goes_plot_1        = [True, False,True ]
-    goes_plot_1_points = [False, False,False ]
-    modis_plot_1       = [False,True, True ]
-    plt_show_1         = [True,False,True ]
+    goes_line           = [False,False,False  ,True  ,False ,True   ]
+    modis_line          = [False,False,False  ,False ,True  ,True   ]
+    cover_plot          = [False,False,False  ,False ,False ,False  ]
+    goes_plot_1         = [True, False,True   ,True  ,False ,True   ]
+    goes_plot_1_points  = [False,False,False  ,True  ,False ,True   ]
+    modis_plot_1        = [False,True, True   ,False ,True  ,True   ]
+    modis_plot_1_points = [False,False,False  ,False ,True  ,True   ] 
+    plt_show_1          = [False,False,False  ,False ,False ,True   ]
     
+    irow = [0,0,0,1,1,1]
+    icol = [0,1,2,0,1,2]
 
+    recalculate=[True,False,False,True,False,False]
+    cover_rads =[2.0,0,0, 0.125,0,0]
+
+    circle_color=[ 'White' ,'Grey' ,'White' ,'White' ,'White' ,'White' ]
 
     subplot_title = [
         "ROI+GOES"
         ,"ROI+MODIS"
         ,"ROI+GOES+MODIS"
+        ,None
+        ,None
+        ,None
     ]
     
-    iter = 0
+    for iter in range(6):
 
-    for i in range(3):
-        iter = i
+        ###########################################################################
+        if recalculate[iter]:
+            print('recalculating iter = ',iter)
+
+            ###########################################################################
+            # HI 28.5N 177W
+            cover_resolution = 11
+            cover_lat =   19.5-0.375
+            cover_lon = -155.5+0.375
+            cover_rad = cover_rads[iter]
+            
+            cover = ps.to_circular_cover(
+                cover_lat
+                ,cover_lon
+                ,cover_rad
+                ,cover_resolution
+                ,range_size_limit=2000)
+        
+            cover_cat = catalog(resolution=11,sids=cover)
+            cover_sids_min = np.amin(cover)
+            cover_sids_max = np.amax(cover) # Need to convert to terminator
+            cover_sids_max = gd.spatial_terminator(cover_sids_max)
+            # for k in list(cover_cat.sdict.keys()):
+            #     print('cc: ',hex(k))
+        
+            ###########################################################################
+            #
+            gm_catalog = catalog(resolution=7)
+            k=0
+            for i in range(10):
+                while(goes_sids[k]<0):
+                    k=k+1
+                # print('adding: ','0x%016x'%goes_sids[k],k)
+                gm_catalog.add('goes',goes_sids[k],goes_data[k])
+                k=k+1
+        
+            for i in range(10):
+                # print('adding: ','0x%016x'%sids[i])
+                gm_catalog.add('modis',sids[i],data[i])
+        
+            k = 0
+            # for i in range(10):
+            idx = np.arange(goes_sids.size)[np.where( (goes_sids > cover_sids_min) & (goes_sids < cover_sids_max))]
+            for k in range(len(idx)):
+                # while(goes_sids[k]<0):
+                #    k=k+1
+                if goes_sids[idx[k]] > 0:
+                    cover_cat.add_to_entry('goes',goes_sids[idx[k]],goes_data[idx[k]])
+                # k=k+1
+        
+            idx = np.arange(sids.size)[np.where( (sids > cover_sids_min) & (sids < cover_sids_max))]
+            for k in range(len(idx)):
+                if sids[idx[k]] > 0:
+                    cover_cat.add_to_entry('modis',sids[idx[k]],data[idx[k]])
+        
+        
+            # print(yaml.dump(gm_catalog))
+            # exit()
+            #
+            ###########################################################################
+
         print('plotting iter ',iter)
         
-        icol = iter
-        ax = axs[icol]
+        ax = axs[irow[iter],icol[iter]]
         
-        ax.set_title(subplot_title[iter])
+        if subplot_title[iter] is not None:
+            ax.set_title(subplot_title[iter])
         if False:
             ax.set_global()
         if True:
@@ -365,9 +380,13 @@ def main():
                     # print('cd_plt shape ',cd_plt.shape)
                     # print('cd_plt type ',type(cd_plt[0]))
                     if goes_line[iter]:
-                        ax.triplot(triang,'r-',transform=transf,lw=3,markersize=3,alpha=0.5)
+                        ax.triplot(triang,'r-',transform=transf,lw=1.5,markersize=3,alpha=0.5)
                     # ax.tripcolor(triang,facecolors=cd_plt,vmin=goes_min,vmax=goes_max,cmap='Reds',alpha=0.4)
-                    ax.tripcolor(triang,facecolors=cd_plt,vmin=vmin,vmax=vmax,cmap='Reds',alpha=0.4)
+                    ax.tripcolor(triang
+                                 ,facecolors=cd_plt
+                                 ,edgecolors='k',lw=0
+                                 ,shading='flat'
+                                 ,vmin=vmin,vmax=vmax,cmap='Reds',alpha=0.45)
     
                 # for cd in cc_data:
                 #     lli    = ps.triangulate_indices([cd.sid])
@@ -381,18 +400,41 @@ def main():
                 cc_data_m = cover_cat.get_all_data('modis')
                 csids,sdat = zip(*[cd.as_tuple() for cd in cc_data_m])
                 mlat,mlon = ps.to_latlon(csids)
-                for cd in cc_data_m:
-                    lli    = ps.triangulate_indices([cd.sid])
+
+                cc_data_m_accum,vmin,vmax = gd.simple_collect(csids,sdat)
+
+                for cs in cc_data_m_accum.keys():
+                    lli    = ps.triangulate_indices([cs])
                     triang = tri.Triangulation(lli[0],lli[1],lli[2])
-                    cd_plt = np.array([cd.datum])
+                    cd_plt = np.array(cc_data_m_accum[cs])
+                    # print('lli[0] len ',len(lli[0]))
+                    # print('cd_plt len ', len(cd_plt))
+                    # print('cd_plt type ',type(cd_plt))
+                    # print('cd_plt shape ',cd_plt.shape)
+                    # print('cd_plt type ',type(cd_plt[0]))
                     if modis_line[iter]:
-                        ax.triplot(triang,'b-',transform=transf,lw=1,markersize=3,alpha=0.5)
-                    ax.tripcolor(triang,facecolors=cd_plt,vmin=modis_min,vmax=modis_max,cmap='Blues',alpha=0.4)
-                ax.scatter(mlon,mlat,s=1,c='yellow')
+                        ax.triplot(triang,'b-',transform=transf,lw=1.5,markersize=3,alpha=0.5)
+                    # ax.tripcolor(triang,facecolors=cd_plt,vmin=goes_min,vmax=goes_max,cmap='Blues',alpha=0.4)
+                    ax.tripcolor(triang
+                                 ,facecolors=cd_plt
+                                 ,edgecolors='k',lw=0
+                                 ,shading='flat'
+                                 ,vmin=vmin,vmax=vmax,cmap='Blues',alpha=0.45)
+
+                # for cd in cc_data_m:
+                #     lli    = ps.triangulate_indices([cd.sid])
+                #     triang = tri.Triangulation(lli[0],lli[1],lli[2])
+                #     cd_plt = np.array([cd.datum])
+                #     if modis_line[iter]:
+                #         ax.triplot(triang,'b-',transform=transf,lw=1,markersize=3,alpha=0.5)
+                #     ax.tripcolor(triang,facecolors=cd_plt,vmin=modis_min,vmax=modis_max,cmap='Blues',alpha=0.4)
+                if modis_plot_1_points[iter]:
+                    ax.scatter(mlon,mlat,s=8,c='cyan')
+                    # ax.scatter(mlon,mlat,s=8,c='darkcyan')
 
             if goes_plot_1[iter]:
                 if goes_plot_1_points[iter]:
-                    ax.scatter(glon,glat,s=1,c='black')
+                    ax.scatter(glon,glat,s=8,c='black')
     
             if False:
                 for i in range(0,10):
@@ -405,10 +447,12 @@ def main():
                 lli = ps.triangulate_indices(cover)
                 ax.triplot(tri.Triangulation(lli[0],lli[1],lli[2])
                            ,'g-',transform=transf,lw=1,markersize=3)
-                # plt.patches.Circle(cover_xy,radius=cover_radius)
+
+            if True:
                 phi=np.linspace(0,2*np.pi,64)
-                rad=cover_rad
-                ax.plot(cover_lon+rad*np.cos(phi),cover_lat+rad*np.sin(phi),transform=transf,color='White')
+                # rad=cover_rad
+                rad=0.125
+                ax.plot(cover_lon+rad*np.cos(phi),cover_lat+rad*np.sin(phi),transform=transf,color=circle_color[iter])
 
             if plt_show_1[iter]:
                 plt.show()

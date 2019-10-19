@@ -244,6 +244,26 @@ def spatial_clear_to_resolution(sid):
     mask =  spatial_terminator_mask(spatial_resolution(sid))
     return (sid & ~mask) + resolution
 
+###########################################################################
+
+def simple_collect(sids,data,force_resolution=None):
+    "Collect the data indexed by sids to an ROI indexed by sids."
+    if force_resolution is None:
+        sids_at_res = list(map(spatial_clear_to_resolution,sids))
+    else:
+        sids_at_res = [spatial_clear_to_resolution(spatial_coerce_resolution(s,force_resolution)) for s in sids]
+    data_accum = dict()
+    for s in sids_at_res:
+        data_accum[s] = []
+    for ics in range(len(sids_at_res)):
+        data_accum[sids_at_res[ics]].append(data[ics])
+    for cs in data_accum.keys():
+        if len(data_accum[cs]) > 1:
+            data_accum[cs] = [sum(data_accum[cs])/(1.0*len(data_accum[cs]))]
+    tmp = np.array(list(data_accum.values()))
+    vmin = np.amin(tmp)
+    vmax = np.amax(tmp)
+    return data_accum,vmin,vmax
 
 ###########################################################################
 
