@@ -54,6 +54,7 @@ Added root fitting to theoretical model that matches linear fit very well. Thres
 *** geodata/SketchG0.py   Check the MODIS data in h5 format, including GRING
 *** geodata/SketchG1.py   Integrate GOES and MODIS data, show comparison viz.
 
+*** geodata/SketchG2.py   Compare GOES and MODIS Granules by "clearing" bits to level, uses GRING, and distribute across nodes
 * Details on performing CCL on the GOES bands
 ** Choose a threshold
 ** Eliminate the sky

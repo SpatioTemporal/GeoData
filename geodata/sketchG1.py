@@ -23,6 +23,12 @@ from stopwatch import sw_timer
 ###########################################################################
 #
 
+def npi64(i):
+    return np.array(i,dtype=np.int64)
+
+def npf64(i):
+    return np.array(i,dtype=np.double)
+
 class sid_geometry(object):
     def __init__(self,sids=None):
         self.triangles = SortedDict()
@@ -250,7 +256,8 @@ def main():
     recalculate=[True,False,False,True,False,False]
     cover_rads =[2.0,0,0, 0.125,0,0]
 
-    circle_color=[ 'White' ,'Grey' ,'White' ,'White' ,'White' ,'White' ]
+    circle_color=[ 'White' ,'lightgrey' ,'White' ,'navajowhite' ,'khaki' ,'White' ]
+    modis_scatter_color=['darkcyan','darkcyan','darkcyan','darkcyan','darkcyan','cyan']
 
     subplot_title = [
         "ROI+GOES"
@@ -335,6 +342,25 @@ def main():
         if True:
             ax.coastlines()
     
+
+        if iter == 0:
+            x0 = 0.05
+            y0 = 0.025; dy = 0.025
+            plt.figtext(x0,y0+0*dy
+                        ,"MODIS: "+"sketchG."+modis_base+modis_item+fmt_suffix+', Water_Vapor_Near_Infrared, resolution = %i'%(sids[10000]&31)
+                        ,fontsize=10)
+            k=0;
+            while goes_sids[k]<0:
+                k=k+1
+            plt.figtext(x0,y0+1*dy
+                        ,"GOES:  "+goes_file+' BAND_3 (6.7mu), resolution = %i'%(goes_sids[k]&31)
+                        ,fontsize=10)
+            plt.figtext(x0,y0+2*dy
+                        ,"ROI Cover: resolution = %d, radius = %0.2f (upper) %0.3f (lower) degrees, center = 0x%016x"%(cover_resolution,cover_rads[0],cover_rads[3],ps.from_latlon(npf64([cover_lat]),npf64([cover_lon]),cover_resolution)[0])
+                        ,fontsize=10)
+            # plt.show()
+            # exit()
+
         if False:
             # k = gm_catalog.sdict.keys()[0]
             # for k in gm_catalog.sdict.keys():
@@ -429,7 +455,8 @@ def main():
                 #         ax.triplot(triang,'b-',transform=transf,lw=1,markersize=3,alpha=0.5)
                 #     ax.tripcolor(triang,facecolors=cd_plt,vmin=modis_min,vmax=modis_max,cmap='Blues',alpha=0.4)
                 if modis_plot_1_points[iter]:
-                    ax.scatter(mlon,mlat,s=8,c='cyan')
+                    ax.scatter(mlon,mlat,s=8,c=modis_scatter_color[iter])
+                    # ax.scatter(mlon,mlat,s=8,c='cyan')
                     # ax.scatter(mlon,mlat,s=8,c='darkcyan')
 
             if goes_plot_1[iter]:
