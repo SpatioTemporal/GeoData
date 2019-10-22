@@ -120,6 +120,8 @@ class ccl_tracker(object):
         nx = workFile['/image_description']['nx']
         ny = workFile['/image_description']['ny']
 
+        workFile.close()
+
         # Mask to valid and shift data values to zero
         bx_lo = self.bx_lo
         idx_valid   = np.where((b5_img>bx_lo) & (b4_img>bx_lo))

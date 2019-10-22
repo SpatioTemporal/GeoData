@@ -259,6 +259,8 @@ def main():
     circle_color=[ 'White' ,'lightgrey' ,'White' ,'navajowhite' ,'khaki' ,'White' ]
     modis_scatter_color=['darkcyan','darkcyan','darkcyan','darkcyan','darkcyan','cyan']
 
+    nodes_cover=[1,2,1,1,2,1]
+
     subplot_title = [
         "ROI+GOES"
         ,"ROI+MODIS"
@@ -362,14 +364,6 @@ def main():
             # exit()
 
         if False:
-            # k = gm_catalog.sdict.keys()[0]
-            # for k in gm_catalog.sdict.keys():
-            for i in range(0,3):
-                k = gm_catalog.sdict.peekitem(i)[0]
-                triang = gm_catalog.sdict[k].geometry.triang()
-                ax.triplot(triang,'r-',transform=transf,lw=1,markersize=3)
-    
-        if False:
             lli = ps.triangulate_indices(cover)
             ax.triplot(tri.Triangulation(lli[0],lli[1],lli[2])
                         ,'g-',transform=transf,lw=1,markersize=3)
@@ -462,6 +456,22 @@ def main():
             if goes_plot_1[iter]:
                 if goes_plot_1_points[iter]:
                     ax.scatter(glon,glat,s=8,c='black')
+
+            if nodes_cover[iter] > 0:
+                if nodes_cover[iter] == 1:
+                    cc_data_ = cover_cat.get_all_data('goes')
+                else:
+                    cc_data_ = cover_cat.get_all_data('modis')
+                sids_,dat_ = zip(*[cd.as_tuple() for cd in cc_data_])
+                # print('sids_ len: ',len(sids_))
+                sids_test   = gd.spatial_clear_to_resolution(npi64([gd.spatial_coerce_resolution(s,5) for s in sids_]))
+                # print('sids_tlen: ',len(sids_test))
+                print('cover: 0x%016x'%ps.from_latlon(npf64([cover_lat]),npf64([cover_lon]),cover_resolution)[0])
+                geom_test   = sid_geometry(sids_test)
+                for s in geom_test.triangles.keys():
+                    print(iter,' 0x%016x'%s)
+                triang_test = geom_test.triang()
+                ax.triplot(triang_test,'g-',transform=transf,lw=1.0,markersize=3,alpha=0.75)
     
             if False:
                 for i in range(0,10):
@@ -474,6 +484,14 @@ def main():
                 lli = ps.triangulate_indices(cover)
                 ax.triplot(tri.Triangulation(lli[0],lli[1],lli[2])
                            ,'g-',transform=transf,lw=1,markersize=3)
+
+            if False:
+                # k = gm_catalog.sdict.keys()[0]
+                # for k in gm_catalog.sdict.keys():
+                for i in range(0,3):
+                    k = gm_catalog.sdict.peekitem(i)[0]
+                    triang = gm_catalog.sdict[k].geometry.triang()
+                    ax.triplot(triang,'r-',transform=transf,lw=1,markersize=3)
 
             if True:
                 phi=np.linspace(0,2*np.pi,64)
