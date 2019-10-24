@@ -257,9 +257,10 @@ def main():
     cover_rads =[2.0,0,0, 0.125,0,0]
 
     circle_color=[ 'White' ,'lightgrey' ,'White' ,'navajowhite' ,'khaki' ,'White' ]
-    modis_scatter_color=['darkcyan','darkcyan','darkcyan','darkcyan','darkcyan','cyan']
+    modis_scatter_color=['darkcyan','darkcyan','darkcyan','darkcyan','cyan','cyan']
 
-    nodes_cover=[1,2,1,1,2,1]
+    # nodes_cover=[1,2,1,1,2,1]
+    nodes_cover=[0,0,0,0,0,0]
 
     subplot_title = [
         "ROI+GOES"
@@ -279,8 +280,19 @@ def main():
             ###########################################################################
             # HI 28.5N 177W
             cover_resolution = 11
-            cover_lat =   19.5-0.375
-            cover_lon = -155.5+0.375
+
+            # Near the Big Island
+            # cover_lat =   19.5-0.375
+            # cover_lon = -155.5+0.375
+
+            # Midway Island
+            # cover_lat =   28.2
+            # cover_lon = -177.35
+
+            # Ni'ihau
+            cover_lat =   21.9
+            cover_lon = -160.17
+
             cover_rad = cover_rads[iter]
             
             cover = ps.to_circular_cover(

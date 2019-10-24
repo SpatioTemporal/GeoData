@@ -17,7 +17,20 @@ import h5py as h5
 
 import modis_coarse_to_fine_geolocation.modis_5km_to_1km_geolocation as pascal_modis
 
+###########################################################################
+
+def with_hdf_get(h,var):
+    sds = hdf.select(var)
+    ret = sds.get()
+    sds.endaccess()
+    return ret
+
+###########################################################################
+
 dataPath="/home/mrilee/data/"
+
+# MOD03.A2005349.2120.061.2017187042837.hdf  MOD05_L2.A2005349.2120.061.2017294065852.hdf
+# MOD03.A2005349.2125.061.2017187042720.hdf  MOD05_L2.A2005349.2125.061.2017294065400.hdf
 
 modis_base   = "MOD05_L2."
 
@@ -26,6 +39,7 @@ modis_base   = "MOD05_L2."
 
 modis_item       = "A2005349.2125.061.2017294065400"
 modis_time_start = "2005-12-15T21:25:00"
+modis_geofilename = "MOD03.A2005349.2125.061.2017187042720.hdf"
 
 modis_suffix = ".hdf"
 modis_filename = modis_base+modis_item+modis_suffix
@@ -39,6 +53,25 @@ key_along  = 'Cell_Along_Swath_1km:mod05'
 hdf        = SD(dataPath+modis_filename,SDC.READ)
 ds_wv_nir  = hdf.select('Water_Vapor_Near_Infrared')
 data       = ds_wv_nir.get()
+
+
+# MODIS_Swath_Type_GEO/Geolocation_Fields/
+# Latitude
+
+hdf_geo           = SD(dataPath+modis_geofilename,SDC.READ)
+print('hg info: ',hdf_geo.info())
+for idx,sds in enumerate(hdf_geo.datasets().keys()):
+    print(idx,sds)
+# hdf_geo_ds = hdf_geo.select['']
+
+# hdf_geo_swath     = hdf_geo.select('MODIS_Swath_Type_GEO')
+# hdf_geo_swath_gf  = hdf_geo_swath['Geolocation_Fields']
+hdf_geo_lat       = hdf_geo.select('Latitude').get()
+hdf_geo_lon       = hdf_geo.select('Longitude').get()
+print('hgl type  ',type(hdf_geo_lat))
+print('hgl shape ',hdf_geo_lat.shape,hdf_geo_lon.shape)
+print('hgl dtype ',hdf_geo_lat.dtype)
+# exit()
 
 add_offset   = ds_wv_nir.attributes()['add_offset']
 scale_factor = ds_wv_nir.attributes()['scale_factor']
@@ -66,11 +99,6 @@ fill_value = ds_wv_nir.attributes()['_FillValue']
 # hdf_lat = hdf.select('Latitude')
 # print('hdf.lat: ',type(hdf_lat),hdf_lat.info())
 
-def with_hdf_get(h,var):
-    sds = hdf.select(var)
-    ret = sds.get()
-    sds.endaccess()
-    return ret
 
 lat_5km = with_hdf_get(hdf,'Latitude')
 lon_5km = with_hdf_get(hdf,'Longitude')
@@ -86,6 +114,9 @@ stare_temporal = np.zeros([nAlong,nAcross],dtype=np.int64)
 
 resolution = int(gd.resolution(2)) # km
 print('resolution ',type(resolution))
+
+# exit()
+
 ktr = 0
 ktr_max = nAlong*nAcross
 print('interpolate from 5km to 1km: %2d%%'%int(100*ktr/ktr_max),end='\r',flush=True)
@@ -93,7 +124,10 @@ for itk_1km in range(nAlong):
     for isc_1km in range(nAcross):
         if int(100*ktr/ktr_max) % 5 == 0 or int(100*ktr/ktr_max) < 2:
             print('interpolate from 5km to 1km: %2d%%'%int(100*ktr/ktr_max),end='\r',flush=True)
-        lat[itk_1km,isc_1km],lon[itk_1km,isc_1km] = pascal_modis.get_1km_pix_pos(itk_1km,isc_1km,lat_5km,lon_5km)
+        if False:
+            lat[itk_1km,isc_1km],lon[itk_1km,isc_1km] = pascal_modis.get_1km_pix_pos(itk_1km,isc_1km,lat_5km,lon_5km)
+        else:
+            lat[itk_1km,isc_1km],lon[itk_1km,isc_1km] = hdf_geo_lat[itk_1km,isc_1km],hdf_geo_lon[itk_1km,isc_1km]
         stare_spatial[itk_1km,isc_1km]  = ps.from_latlon(
             np.array([lat[itk_1km,isc_1km]])
             ,np.array([lon[itk_1km,isc_1km]])
@@ -162,3 +196,4 @@ short Water_Vapor_Near_Infrared(Cell_Along_Swath_1km=2030, Cell_Across_Swath_1km
 """
 
 hdf.end()
+hdf_geo.end()
