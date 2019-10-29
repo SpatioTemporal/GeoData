@@ -259,8 +259,8 @@ def main():
     circle_color=[ 'White' ,'lightgrey' ,'White' ,'navajowhite' ,'khaki' ,'White' ]
     modis_scatter_color=['darkcyan','darkcyan','darkcyan','darkcyan','cyan','cyan']
 
-    # nodes_cover=[1,2,1,1,2,1]
-    nodes_cover=[0,0,0,0,0,0]
+    nodes_cover=[1,2,1,1,2,1]
+    # nodes_cover=[0,0,0,0,0,0]
 
     subplot_title = [
         "ROI+GOES"

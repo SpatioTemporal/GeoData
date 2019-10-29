@@ -8,6 +8,7 @@ import json
 from sortedcontainers import SortedDict, SortedList
 
 import geodata as gd
+from geodata.stopwatch import sw_timer
 
 def hex16(i):
     return "0x%016x"%i
@@ -42,8 +43,11 @@ class join_value(object):
         str = json.dumps(output)+"\n"
         return str
 
-def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name,workFileName):
+def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name,workFileName,verbose_progress=True):    
     "Join goes files with a particular m2_file."
+    
+    sw_timer.stamp('join_goes_and_m2_to_h5-start')
+
     ##### HDF5 Data types for output
     image_dtype = np.dtype([
         ('stare_spatial',np.int64)
@@ -84,6 +88,8 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
     # print('goes_filenames_valid: ',goes_filenames_valid)
     print('m2_file_name          ',m2_file_name)
 
+    sw_timer.stamp('join_goes_and_m2_to_h5-start-merra2')
+
     ###########################################################################
     ##### MERRA-2
 
@@ -100,6 +106,8 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
     m2_indices = ps.from_latlon(m2_lat,m2_lon,m2_resolution)
     m2_term = gd.spatial_terminator(m2_indices)
     m2_tid     = gd.merra2_stare_time(m2_ds)
+
+    sw_timer.stamp('join_goes_and_m2_to_h5-start-goes')
 
     ###########################################################################
     ##### GOES
@@ -141,11 +149,16 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
     g_idx_valid = np.where((g_lat>=-90.0) & (g_lat<=90.0))
     g_idx_invalid = np.where(((g_lat<-90.0) | (g_lat>90.0)))
     goes_indices = np.full(g_lat.shape,-1,dtype=np.int64)
+    sw_timer.stamp('join_goes_and_m2_to_h5-start-goes-from_latlon-start')
     goes_indices[g_idx_valid] = ps.from_latlon(g_lat[g_idx_valid],g_lon[g_idx_valid],int(gd.resolution(goes_ds['elemRes'][0])))
+    sw_timer.stamp('join_goes_and_m2_to_h5-start-join-from_latlon-end')
 
     ##### Allocate MERRA-2 arrays co-aligned with GOES
     m2_src_coord_h5 = np.full(g_lat.shape,-1,dtype=np.int64)
     m2_tpw_h5       = np.full(g_lat.shape,-1,dtype=np.int64)
+
+
+    sw_timer.stamp('join_goes_and_m2_to_h5-start-join')
 
     #####
 
@@ -187,8 +200,9 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
     print('Push joined m2 data into the dataset n = ',nktr)
     for k in range(nktr):
         ktr = ktr + 1
-        if int(100.0*ktr/ktr_max) % 5 == 0 or int(100*ktr/ktr_max) < 2:
-            print('join_goes_merra2: %2d%% complete, %d elements pushed.'%(int(100*ktr/ktr_max),elements_pushed),end='\r',flush=True)
+        if verbose_progress:
+            if int(100.0*ktr/ktr_max) % 5 == 0 or int(100*ktr/ktr_max) < 2:
+                print('join_goes_merra2: %2d%% complete, %d elements pushed.'%(int(100*ktr/ktr_max),elements_pushed),end='\r',flush=True)
         sid = jkeys[k]
         if join[sid].contains(goes_bandname):
             if join[sid].contains('m2'):
@@ -200,6 +214,9 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
                 elements_pushed = elements_pushed + len(join[sid].get(goes_bandname))
     print('join_goes_merra2: done, %d elements pushed.           '%(elements_pushed),flush=True)
     print('')
+
+
+    sw_timer.stamp('join_goes_and_m2_to_h5-start-save-results')
 
     ###########################################################################
     ##### HDF5 SAVE DATASET
@@ -238,5 +255,7 @@ def join_goes_and_m2_to_h5(goes_datapath,goes_filenames,m2_datapath,m2_file_name
             goes_bandname = goes_bandnames[goes_band]
 
     workFile.close()
+
+    sw_timer.stamp('join_goes_and_m2_to_h5-end')
 
     return
