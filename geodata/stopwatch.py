@@ -7,6 +7,7 @@ class stopwatch(object):
     names      = {}
     iteration  = {}
     _timer     = process_time
+    verbosity  = 0
 
     def __init__(self,timer=None):
         if timer is not None:
@@ -27,6 +28,8 @@ class stopwatch(object):
             name = "stamp-%s"%len(self.names.keys())
         self.add_name(name)
         self.timestamps.append(self._timer())
+        if self.verbosity > 0:
+            print(self.report())
         return self.timestamps[-1]
 
     def delta(self,name1=None,name2=None):
@@ -43,6 +46,10 @@ class stopwatch(object):
 
     def delta_since_start(self):
         return self.current() - self.timestamps[0]
+
+    def report(self):
+        keys = list(self.names.keys())
+        return self.report_string("Instantiation",keys[-1])
 
     def report_string(self,name1,name2,message=None):
         if message is None:

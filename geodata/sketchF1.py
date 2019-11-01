@@ -1,7 +1,9 @@
 
 import geodata as gd
 from join_goes_merra2 import join_goes_and_m2_to_h5
+from stopwatch import sw_timer
 
+sw_timer.verbosity = 1
 
 for i in range(3,6):
     print("/home/mrilee/data/goes10.2005.349.003015.BAND_0%d.nc"%i)
@@ -21,8 +23,6 @@ for t in times:
 
 m2_data_dir='/home/mrilee/data/'
 m2_filename='MERRA2_300.tavg1_2d_slv_Nx.20051215.nc4'
-
-
 
 for filenames in data_filenames:
     tid = gd.temporal_id_from_file(data_dir,filenames[0])
