@@ -1,5 +1,6 @@
 
 
+import re
 from time import process_time
 
 class stopwatch(object):
@@ -62,6 +63,34 @@ class stopwatch(object):
         for i in range(len(self.timestamps)):
             ret_str=ret_str+prefix+self.report_string("Instantiation",keys[i])+"\n"
         return ret_str
+
+    def summary(self,prefix=''):
+        keys = list(self.names.keys())
+        deltas = []
+        deltas_gather = {}
+        for i in range(1,len(self.timestamps)):
+            deltas.append(self.timestamps[i]-self.timestamps[i-1])
+            m = re.search('^(.*)\((.*)\)$',keys[i])
+            if m is None:
+                deltas_gather[keys[i]] = [deltas[-1]]
+            else:
+                deltas_gather[m.group(1)].append(deltas[-1])
+        keys_gather = list(deltas_gather.keys())
+        totals = {}
+        iters  = {}
+        ret_str = prefix + '<stopwatch-summary>\n'
+        ret_str = ret_str + prefix + "'key','sum (s)','min','max','iterations'\n"
+        for i in range(0,len(keys_gather)):
+            totals[keys_gather[i]] = sum(deltas_gather[keys_gather[i]])
+            iters[keys_gather[i]]  = len(deltas_gather[keys_gather[i]])
+            ret_str = ret_str + prefix + "'%s',%f,%f,%f,%i\n"\
+                      %(keys_gather[i]\
+                        ,totals[keys_gather[i]]\
+                        ,min(deltas_gather[keys_gather[i]])\
+                        ,max(deltas_gather[keys_gather[i]])\
+                        ,iters[keys_gather[i]])
+        ret_str = ret_str + prefix + '</stopwatch-summary>\n'
+        return ret_str,totals,iters
 
 global sw_timer
 sw_timer = stopwatch()

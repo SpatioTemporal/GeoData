@@ -87,16 +87,22 @@ class join_goes_and_m2(object):
     def join(self):
         "Join goes files with a particular m2_file."
         
-        sw_timer.stamp('join_goes_and_m2-join-start')    
+        sw_timer.stamp('join_goes_and_m2-join-start')
     
         ###########################################################################
         ##### MERRA-2
+
+        sw_timer.stamp('join_goes_and_m2-start-merra2-start')
     
         m2_dLat    = 0.5
         m2_dLon    = 5.0/8.0
         m2_dLatkm  = m2_dLat * gd.re_km/gd.deg_per_rad
         m2_dLonkm  = m2_dLon * gd.re_km/gd.deg_per_rad
+
+        sw_timer.stamp('join_goes_and_m2-start-merra2-dataset-start')
         m2_ds  = Dataset(self.m2_datapath+self.m2_file_name)
+        sw_timer.stamp('join_goes_and_m2-start-merra2-dataset-end')
+
         m2_lat,m2_lon = np.meshgrid(m2_ds['lat'],m2_ds['lon'])
         m2_lat     = m2_lat.flatten()
         m2_lon     = m2_lon.flatten()
@@ -106,15 +112,21 @@ class join_goes_and_m2(object):
         m2_term = gd.spatial_terminator(m2_indices)
         m2_tid     = gd.merra2_stare_time(m2_ds)
     
-        sw_timer.stamp('join_goes_and_m2_to_h5-start-goes')
+        sw_timer.stamp('join_goes_and_m2-start-merra2-end')
+
     
         ###########################################################################
         ##### GOES
+
+        sw_timer.stamp('join_goes_and_m2-start-goes-start')
     
         self.igoes = 0
         self.goes_band = self.goes_filenames_valid[self.igoes].split('.')[4]
         self.goes_bandname = self.goes_bandnames[self.goes_band]
+
+        sw_timer.stamp('join_goes_and_m2-start-goes-start-dataset-start')
         self.goes_ds = Dataset(self.goes_datapath+self.goes_filenames_valid[self.igoes])
+        sw_timer.stamp('join_goes_and_m2-start-goes-start-dataset-end')
 
         goes_tid = gd.goes10_img_stare_time(self.goes_ds)
     
@@ -149,17 +161,17 @@ class join_goes_and_m2(object):
         g_idx_valid = np.where((g_lat>=-90.0) & (g_lat<=90.0))
         g_idx_invalid = np.where(((g_lat<-90.0) | (g_lat>90.0)))
         self.goes_indices = np.full(g_lat.shape,-1,dtype=np.int64)
-        sw_timer.stamp('join_goes_and_m2_to_h5-start-goes-from_latlon-start')
+        sw_timer.stamp('join_goes_and_m2-start-goes-from_latlon-start')
         self.goes_indices[g_idx_valid] = ps.from_latlon(g_lat[g_idx_valid],g_lon[g_idx_valid],int(gd.resolution(self.goes_ds['elemRes'][0])))
         self.goes_indices = self.goes_indices
-        sw_timer.stamp('join_goes_and_m2_to_h5-start-join-from_latlon-end')
+        sw_timer.stamp('join_goes_and_m2-start-goes-from_latlon-end')
     
         ###########################################################################
         ##### Allocate MERRA-2 arrays co-aligned with GOES
         self.m2_src_coord_h5 = np.full(g_lat.shape,-1,dtype=np.int64)
         self.m2_tpw_h5       = np.full(g_lat.shape,-1,dtype=np.int64)
     
-        sw_timer.stamp('join_goes_and_m2_to_h5-start-join')
+        sw_timer.stamp('join_goes_and_m2-start-join')
     
         #####
     
@@ -215,8 +227,8 @@ class join_goes_and_m2(object):
                     elements_pushed = elements_pushed + len(join[sid].get(self.goes_bandname))
         print('join_goes_merra2: done, %d elements pushed.           '%(elements_pushed),flush=True)
         print('')
-
-        sw_timer.stamp('join_goes_and_m2_to_h5-start-save-results')
+        sw_timer.stamp('join_goes_and_m2-join-end')    
+        sw_timer.stamp('join_goes_and_m2-start-goes-end')
         return self
     
 
@@ -278,7 +290,9 @@ class join_goes_and_m2(object):
         workFile['/merra2_description']['self.tpw_offset'] = self.tpw_offset
         workFile['/merra2_description']['self.tpw_scale']  = self.tpw_scale
     
+        sw_timer.stamp('join_goes_and_m2-to_h5-goes-before-loop')
         while self.igoes < len(self.goes_filenames_valid):
+            sw_timer.stamp('join_goes_and_m2-to_h5-goes-loop-start')
             print(self.igoes,' saving ',self.goes_bandname,' from file ',self.goes_filenames_valid[self.igoes])
             workFile['/image'][self.goes_bandname] = self.goes_ds['data'][0,:,:].flatten()
             self.goes_ds.close()
@@ -286,11 +300,13 @@ class join_goes_and_m2(object):
             # Assume remaining GOES bands have the same image sizes and locations.
             if self.igoes < len(self.goes_filenames_valid):
                 self.goes_band     = self.goes_filenames_valid[self.igoes].split('.')[4]
+                sw_timer.stamp('join_goes_and_m2-to_h5-goes-dataset-start')
                 self.goes_ds       = Dataset(self.goes_datapath+self.goes_filenames_valid[self.igoes])
+                sw_timer.stamp('join_goes_and_m2-to_h5-goes-dataset-end')
                 self.goes_bandname = self.goes_bandnames[self.goes_band]
+            sw_timer.stamp('join_goes_and_m2-to_h5-goes-loop-end')
 
         workFile.close()
-    
         sw_timer.stamp('join_goes_and_m2-to_h5-end')
     
         return
