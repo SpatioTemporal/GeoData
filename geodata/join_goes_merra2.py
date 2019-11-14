@@ -287,8 +287,8 @@ class join_goes_and_m2(object):
     
         workFile['/merra2_description']['nx'] = 576
         workFile['/merra2_description']['ny'] = 361
-        workFile['/merra2_description']['self.tpw_offset'] = self.tpw_offset
-        workFile['/merra2_description']['self.tpw_scale']  = self.tpw_scale
+        workFile['/merra2_description']['tpw_offset'] = self.tpw_offset
+        workFile['/merra2_description']['tpw_scale']  = self.tpw_scale
     
         sw_timer.stamp('join_goes_and_m2-to_h5-goes-before-loop')
         while self.igoes < len(self.goes_filenames_valid):
