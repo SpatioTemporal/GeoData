@@ -256,8 +256,8 @@ class join_goes_and_m2(object):
         m2_description_dtype = np.dtype([
             ('nx',np.int)
             ,('ny',np.int)
-            ,('self.tpw_offset',np.double)
-            ,('self.tpw_scale',np.double)
+            ,('tpw_offset',np.double)
+            ,('tpw_scale',np.double)
         ])
 
         # self.m2_src_coord_h5
