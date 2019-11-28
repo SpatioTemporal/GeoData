@@ -231,6 +231,8 @@ class join_goes_and_m2(object):
         sw_timer.stamp('join_goes_and_m2-start-goes-end')
         return self
     
+    def get_ref(self,attr):
+        return getattr(self,attr)
 
     def to_h5(self,workFileName):
         ###########################################################################
