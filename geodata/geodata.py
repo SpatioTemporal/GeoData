@@ -84,7 +84,7 @@ def bbox_lonlat(lat,lon,km,close=False):
   else:
     return [lonm,lonp,lonp,lonm],[latm,latm,latp,latp]
 
-stare_temporal_resolutions = { 2: {'1year':18,'1day':27, '1/2day':28,'4hr':30,'1hr':32,'1/2hr':33,'1/4hr':34,'1sec':44,'1msec':54}}
+stare_temporal_resolutions = { 2: {'1year':18,'1day':27, '1/2day':28,'4hr':30,'1hr':32,'1/2hr':33,'1/4hr':34,'1/8hr':35,'1/16hr':36,'1sec':44,'1msec':54}}
 
 def format_time(yr,mo,dy,hr,mn,sc):
     return "%04d-%02d-%02dT%02d:%02d:%02d"%(yr,mo,dy,hr,mn,sc)
@@ -181,11 +181,27 @@ def temporal_id_centered_from_merra2_filename(m2name):
     m2tid_centered = ps.from_utc(m2dt_np.astype(np.int64),stare_temporal_resolutions[2]['1/2day'])
     return m2tid_centered
 
+def temporal_id_centered_from_modis_filename(mfname):
+    mfname_split = mfname.split(".")
+    yr  = mfname_split[1][1:5]
+    ydy = mfname_split[1][5:8]
+    hr  = int(mfname_split[2][0:2])
+    mn  = int(mfname_split[2][2:4])
+    # sec = int(mfname_split[2][4:6])
+    sec = 0
+    mdt = dt.datetime(int(yr),1,1)+dt.timedelta(int(ydy)-1)
+    mdt_str = format_time(int(yr),int(mdt.month),int(mdt.day),hr,mn,sec)
+    mdt_np = np.array([mdt_str],dtype='datetime64[ms]')
+    mtid_centered = ps.from_utc(mdt_np.astype(np.int64),stare_temporal_resolutions[2]['1/16hr'])
+    return mtid_centered
+
 def temporal_id_centered_from_filename(fname):
   if "MERRA" in fname:
     return temporal_id_centered_from_merra2_filename(fname)[0]
   elif "goes" in fname:
     return temporal_id_centered_from_goes_filename(fname)[0]
+  elif "MOD" in fname or "MYD" in fname:
+    return temporal_id_centered_from_modis_filename(fname)[0]
   else:
     return None
 
@@ -267,10 +283,26 @@ def simple_collect(sids,data,force_resolution=None):
 
 ###########################################################################
 
+class modis_filename(object):
+    def __init__(self,fn):
+        fn_split = split(fn,'.')
+        self.base_name = fn_split[0]
+        self.adate     = fn_split[1]
+        self.time      = fn_split[2]
+        self.proc_id   = fn_split[3]
+        self.proc_date = fn_split[4]
+        self.ext       = fn_split[5]
+        return
+    def datetime(self):
+        return '.'.join([self.adate,self.time])
+
+###########################################################################
+
 class data_catalog(object):
     def __init__(self,config):
-        self.config = config
-        self.files  = None
+        self.config             = config
+        self.files              = None
+        self.tid_centered_index = None
         return
 
     def get_files(self):
@@ -292,7 +324,9 @@ class data_catalog(object):
         return self.files
 
     def get_tid_centered_index(self):
-        return temporal_id_centered_filename_index(self.get_files())
+        if self.tid_centered_index == None:
+            self.tid_centered_index = temporal_id_centered_filename_index(self.get_files())
+        return self.tid_centered_index
 
     def find(self,tid):
         ok = False
