@@ -13,6 +13,12 @@ import numpy as np
 import geodata as gd
 from pyhdf.SD import SD, SDC
 
+from stopwatch import sw_timer as timer
+
+import pystare as ps
+
+from sortedcontainers import SortedDict
+
 def safe_shape(x):
     try:
         ret = x.shape
@@ -27,6 +33,8 @@ class modis05_set(object):
     geo_latlon  = None
     geo_lat     = None
     geo_lon     = None
+    sare        = None
+    tare        = None
     data_wv_nir = None
     def __init__(self,data,location,data_sourcedir=None,location_sourcedir=None):
         self.data     = data
@@ -55,12 +63,16 @@ class modis05_set(object):
             add_offset       = ds_wv_nir.attributes()['add_offset']
             scale_factor     = ds_wv_nir.attributes()['scale_factor']
             self.data_wv_nir = (ds_wv_nir.get()-add_offset)*scale_factor
+            ds_wv_nir.endaccess()
             hdf.end()
         return self
     def vmin(self):
         return np.amin(self.data_wv_nir)
     def vmax(self):
         return np.amax(self.data_wv_nir)
+    def make_sare(self,res_km=1):
+        sare = ps.from_latlon(self.geo_lat.flatten(),self.geo_lon.flatten(),int(gd.resolution(res_km)))
+        return self
     def info(self):
         return '\n<modis05_set>' \
             +'\ndata              =%s'%self.data \
@@ -70,9 +82,6 @@ class modis05_set(object):
             +'\nalong,across      =(%s, %s)'%(self.nAlong,self.nAcross)\
             +'\n</modis05_set>' \
             +'\n'
-
-
-
 
 def main():
     print('MODIS Sketching')
@@ -91,14 +100,14 @@ def main():
     print('mod03 catalog\n',mod03_catalog.get_tid_centered_index())
     print('mod05 catalog\n',mod05_catalog.get_tid_centered_index())
 
-    modis_sets = dict()
+    modis_sets = SortedDict()
     for tid in mod05_catalog.tid_centered_index: # replace with temporal comparison
         if(len(mod05_catalog.tid_centered_index[tid])>1 or len(mod03_catalog.tid_centered_index[tid])>1):
             raise NotImplementedError('sketchH only written for preselected pairs of MODIS files')
         modis_sets[tid] = modis05_set(mod05_catalog.tid_centered_index[tid][0]
                                       ,mod03_catalog.tid_centered_index[tid][0]
                                       ,data_sourcedir = data_sourcedir)
-        modis_sets[tid].load_wv_nir().load_geo()
+        modis_sets[tid].load_wv_nir().load_geo().make_sare()
         print(hex(tid),modis_sets[tid].data,modis_sets[tid].location)
         print(modis_sets[tid].info())
         
@@ -115,7 +124,13 @@ def main():
 
     vmin = np.amin(np.array([a.vmin() for a in modis_sets.values()]))
     vmax = np.amax(np.array([a.vmax() for a in modis_sets.values()]))
-    for tid in mod05_catalog.tid_centered_index: # replace with temporal comparison
+    tKeys = list(modis_sets.keys())
+    tid   = tKeys[0]
+    # tKeys = tKeys[1:]
+    tKeys = tKeys[-2:-1]
+    # for tid in mod05_catalog.tid_centered_index: # replace with temporal comparison
+    # if True:
+    for tid in tKeys:
         plt.scatter(
             modis_sets[tid].geo_lon
             ,modis_sets[tid].geo_lat
