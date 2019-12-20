@@ -36,6 +36,7 @@ class modis05_set(object):
     sare        = None
     tare        = None
     data_wv_nir = None
+    cover       = None
     def __init__(self,data,location,data_sourcedir=None,location_sourcedir=None):
         self.data     = data
         self.location = location
@@ -64,6 +65,7 @@ class modis05_set(object):
             scale_factor     = ds_wv_nir.attributes()['scale_factor']
             self.data_wv_nir = (ds_wv_nir.get()-add_offset)*scale_factor
             ds_wv_nir.endaccess()
+            self.cover = gd.modis_cover_from_gring(hdf)
             hdf.end()
         return self
     def vmin(self):
@@ -101,7 +103,9 @@ def main():
     print('mod05 catalog\n',mod05_catalog.get_tid_centered_index())
 
     modis_sets = SortedDict()
-    for tid in mod05_catalog.tid_centered_index: # replace with temporal comparison
+    tKeys = list(mod05_catalog.tid_centered_index.keys())
+    for tid in tKeys[0:1]:
+    # for tid in mod05_catalog.tid_centered_index: # replace with temporal comparison
         if(len(mod05_catalog.tid_centered_index[tid])>1 or len(mod03_catalog.tid_centered_index[tid])>1):
             raise NotImplementedError('sketchH only written for preselected pairs of MODIS files')
         modis_sets[tid] = modis05_set(mod05_catalog.tid_centered_index[tid][0]
@@ -110,7 +114,6 @@ def main():
         modis_sets[tid].load_wv_nir().load_geo().make_sare()
         print(hex(tid),modis_sets[tid].data,modis_sets[tid].location)
         print(modis_sets[tid].info())
-        
 
     ###########################################################################
     proj=ccrs.PlateCarree()
@@ -127,7 +130,7 @@ def main():
     tKeys = list(modis_sets.keys())
     tid   = tKeys[0]
     # tKeys = tKeys[1:]
-    tKeys = tKeys[-2:-1]
+    # tKeys = tKeys[-2:-1]
     # for tid in mod05_catalog.tid_centered_index: # replace with temporal comparison
     # if True:
     for tid in tKeys:
@@ -140,7 +143,13 @@ def main():
             ,vmin=vmin
             ,vmax=vmax
         )
-                    
+        # clons,clats,cintmat = ps.triangulate_indices(modis_sets[tid].cover)
+        tmp_cover = ps.to_compressed_range(modis_sets[tid].cover)
+        # tmp_cover = ps.expand_intervals(tmp_cover,2)
+        tmp_cover = ps.expand_intervals(tmp_cover,1)
+        clons,clats,cintmat = ps.triangulate_indices(tmp_cover)
+        ctriang = tri.Triangulation(clons,clats,cintmat)
+        ax.triplot(ctriang,'b-',transform=transf,lw=1.0,markersize=3,alpha=0.5)
     plt.show()
 
     print('MODIS Sketching Done')
