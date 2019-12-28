@@ -11,6 +11,7 @@ import cartopy.crs as ccrs
 import numpy as np
 
 import geodata as gd
+import h5py as h5
 from pyhdf.SD import SD, SDC
 
 from stopwatch import sw_timer as timer
@@ -19,6 +20,8 @@ import pystare as ps
 
 from sortedcontainers import SortedDict
 
+###########################################################################
+#
 def safe_shape(x):
     try:
         ret = x.shape
@@ -26,7 +29,86 @@ def safe_shape(x):
         ret = None
         pass
     return ret
+#
+###########################################################################
+#
 
+class sare_partition(object):
+    sid        = None
+    data       = None
+    dtype      = None
+    name_base  = None
+    var_name   = None
+    shape      = None # (nAcross,nAlong)
+    
+    def __init__(self,sid,name_base=""):
+        self.sid       = sid # The spatial id associated with the SARE partition
+        self.name_base = name_base
+        self.fname     = "%016x.%s.h5"%(sid,name_base)
+        return
+
+    def write1(self,shape=None,dataset_name="vars",vars={}):
+        """
+        Input
+          shape - the shape of the original source array [nacross, nalong]
+          vars - is a dictionary of np vars
+            'sare' - spatial ids, a numpy array with a position for each row in the 'tables'
+            'src_coord' - the index position in the original source array
+        """
+        self.dtype     = [(i,vars[i].dtype) for i in vars]
+        # if sare and src_coord are not in self.dtype.names then raise?
+        vars_ns  = np.array([len(vars[i]) for i in vars],dtype=np.int)
+        vars_nmn = np.amin(vars_ns)
+        vars_nmx = np.amax(vars_ns)
+        if vars_nmn != vars_nmx:
+            raise ValueError('Arrays to be output have different lengths.')
+        vars_n = vars_nmn
+        outFile = h5.File(self.fname,'w')
+
+        outFile.create_dataset('metadata',[]
+                               ,dtype=np.dtype([('sare_id',np.int64)
+                                                ,('shape0',np.int32)
+                                                ,('shape1',np.int32)
+                                                ,('dataset_name','S%i'%len(dataset_name))
+                               ]))
+        outFile['metadata']['sare_id']      = self.sid
+        outFile['metadata']['shape0']       = shape[0]
+        outFile['metadata']['shape1']       = shape[1]
+        outFile['metadata']['dataset_name'] = dataset_name
+        
+        outFile.create_dataset(dataset_name,[vars_n],dtype=self.dtype)
+        for i in vars:
+            outFile[dataset_name][i] = vars[i]
+            
+        outFile.close()
+        return
+
+    def read1(self):
+        inFile = h5.File(self.fname,'r')
+
+        # print('i.attrs: ',inFile.keys())
+        dataset_name = inFile['metadata']['dataset_name']
+        shape        = (inFile['metadata']['shape0'],inFile['metadata']['shape1'])
+        sare         = inFile[dataset_name]['sare']
+        src_coord    = inFile[dataset_name]['src_coord']
+        # print('if.dtype: ',inFile[dataset_name].dtype)
+        print('if.dtype.names: ',inFile[dataset_name].dtype.names)
+        vars = {}
+        for i in inFile[dataset_name].dtype.names:
+            vars[i] = inFile[dataset_name][i].copy()
+        inFile.close()
+        return (shape,dataset_name,vars)
+    
+#
+###########################################################################
+#
+
+
+
+
+#
+###########################################################################
+#
 class modis05_set(object):
     data        = None
     locations   = None
@@ -37,6 +119,8 @@ class modis05_set(object):
     tare        = None
     data_wv_nir = None
     cover       = None
+    nAlong      = None
+    nAcross     = None
     def __init__(self,data,location,data_sourcedir=None,location_sourcedir=None):
         self.data     = data
         self.location = location
@@ -73,7 +157,7 @@ class modis05_set(object):
     def vmax(self):
         return np.amax(self.data_wv_nir)
     def make_sare(self,res_km=1):
-        sare = ps.from_latlon(self.geo_lat.flatten(),self.geo_lon.flatten(),int(gd.resolution(res_km)))
+        self.sare = ps.from_latlon(self.geo_lat.flatten(),self.geo_lon.flatten(),int(gd.resolution(res_km)))
         return self
     def info(self):
         return '\n<modis05_set>' \
@@ -84,6 +168,9 @@ class modis05_set(object):
             +'\nalong,across      =(%s, %s)'%(self.nAlong,self.nAcross)\
             +'\n</modis05_set>' \
             +'\n'
+    #def companion(self):
+    #    """Save translation & lookup tables."""
+    #    return
 
 def main():
     print('MODIS Sketching')
@@ -118,12 +205,13 @@ def main():
     ###########################################################################
     proj=ccrs.PlateCarree()
     transf = ccrs.Geodetic()
-    
-    plt.figure()
-    
-    ax = plt.axes(projection=proj)
-    ax.set_global()
-    ax.coastlines()
+
+    def init_figure(proj):
+        plt.figure()
+        ax = plt.axes(projection=proj)
+        ax.set_global()
+        ax.coastlines()
+        return ax
 
     vmin = np.amin(np.array([a.vmin() for a in modis_sets.values()]))
     vmax = np.amax(np.array([a.vmax() for a in modis_sets.values()]))
@@ -132,25 +220,79 @@ def main():
     # tKeys = tKeys[1:]
     # tKeys = tKeys[-2:-1]
     # for tid in mod05_catalog.tid_centered_index: # replace with temporal comparison
-    # if True:
-    for tid in tKeys:
-        plt.scatter(
-            modis_sets[tid].geo_lon
-            ,modis_sets[tid].geo_lat
-            ,s=1
-            ,c=modis_sets[tid].data_wv_nir
-            ,transform=transf
-            ,vmin=vmin
-            ,vmax=vmax
-        )
+    if True:
+    # for tid in tKeys:
+        if False:
+            plt.scatter(
+                modis_sets[tid].geo_lon
+                ,modis_sets[tid].geo_lat
+                ,s=1
+                ,c=modis_sets[tid].data_wv_nir
+                ,transform=transf
+                ,vmin=vmin
+                ,vmax=vmax
+            )
         # clons,clats,cintmat = ps.triangulate_indices(modis_sets[tid].cover)
         tmp_cover = ps.to_compressed_range(modis_sets[tid].cover)
         # tmp_cover = ps.expand_intervals(tmp_cover,2)
-        tmp_cover = ps.expand_intervals(tmp_cover,1)
+        tmp_cover = ps.expand_intervals(tmp_cover,5)
         clons,clats,cintmat = ps.triangulate_indices(tmp_cover)
         ctriang = tri.Triangulation(clons,clats,cintmat)
-        ax.triplot(ctriang,'b-',transform=transf,lw=1.0,markersize=3,alpha=0.5)
-    plt.show()
+        for sid in tmp_cover[0:1]:
+            print(sid,' sid,cover sid: 0x%016x'%sid)
+            idx = np.where(ps.cmp_spatial(np.array([sid],dtype=np.int64),modis_sets[tid].sare) != 0)
+            spart_h5 = sare_partition(sid,'sketchH')
+            spart_h5.write1(
+                shape        = [modis_sets[tid].nAcross,modis_sets[tid].nAlong]
+                ,dataset_name = 'wv_nir'
+                ,vars         = {
+                    'sare':modis_sets[tid].sare[idx]
+                    ,'src_coord':np.arange(len(modis_sets[tid].sare))[idx]
+                    ,'Water_Vapor_Near_Infrared':modis_sets[tid].data_wv_nir.flatten()[idx]}
+                )
+        if False:
+            ax = init_figure(proj)
+            ax.triplot(ctriang,'b-',transform=transf,lw=1.0,markersize=3,alpha=0.5)
+            plt.scatter(
+                modis_sets[tid].geo_lon.flatten()[idx]
+                ,modis_sets[tid].geo_lat.flatten()[idx]
+                ,s=1
+                ,c=modis_sets[tid].data_wv_nir.flatten()[idx]
+                ,transform=transf
+                ,vmin=vmin
+                ,vmax=vmax
+            )
+            plt.show()
+        spart_h5_1 = sare_partition(sid,'sketchH')
+        (s5_shape,s5_name,s5_vars) = spart_h5_1.read1()
+        idx = s5_vars['src_coord']
+        if False:
+            ax = init_figure(proj)
+            ax.triplot(ctriang,'g-',transform=transf,lw=1.0,markersize=3,alpha=0.5)
+            plt.scatter(
+                modis_sets[tid].geo_lon.flatten()[idx]
+                ,modis_sets[tid].geo_lat.flatten()[idx]
+                ,s=1
+                ,c=modis_sets[tid].data_wv_nir.flatten()[idx]
+                ,transform=transf
+                ,vmin=vmin
+                ,vmax=vmax
+            )
+            plt.show()
+        if True:
+            ax = init_figure(proj)
+            ax.triplot(ctriang,'r-',transform=transf,lw=1.0,markersize=3,alpha=0.5)
+            lat,lon = ps.to_latlon(s5_vars['sare'])
+            plt.scatter(
+                lon
+                ,lat
+                ,s=1
+                ,c=s5_vars['Water_Vapor_Near_Infrared']
+                ,transform=transf
+                ,vmin=vmin
+                ,vmax=vmax
+            )
+            plt.show()
 
     print('MODIS Sketching Done')
     return
