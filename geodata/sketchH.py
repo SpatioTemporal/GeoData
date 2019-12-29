@@ -276,7 +276,8 @@ def main():
             idx_all[sid] = np.where(ps.cmp_spatial(np.array([sid],dtype=np.int64),modis_sets[tid].sare) != 0)
             spart_nmax = max(spart_nmax,len(modis_sets[tid].sare[idx_all[sid]]))
         print('max spart items to write per file: ',spart_nmax)
-            
+
+        spart_names = []
         for sid in tmp_cover:
             idx = idx_all[sid][0]
             print(sid,' sid,cover sid: 0x%016x'%sid,' len(idx)=%i'%(len(idx)))
@@ -292,6 +293,7 @@ def main():
                     ,'src_coord':np.arange(len(modis_sets[tid].sare))[idx]
                     ,'Water_Vapor_Near_Infrared':modis_sets[tid].data_wv_nir.flatten()[idx]}
                 )
+            spart_names.append(spart_h5.fname)
             if False:
                 ax = init_figure(proj)
                 ax.triplot(ctriang,'b-',transform=transf,lw=1.0,markersize=3,alpha=0.5)
@@ -306,6 +308,7 @@ def main():
                 )
                 plt.show()
             spart_h5_1 = sare_partition(sid,spart_h5_namebase)
+            spart_dtype = spart_h5_1.dtype
             (s5_shape,s5_name,s5_vars) = spart_h5_1.read1()
             idx = s5_vars['src_coord']
             if False:
@@ -321,7 +324,7 @@ def main():
                     ,vmax=vmax
                 )
                 plt.show()
-            if True:
+            if False:
                 ax = init_figure(proj)
                 ax.triplot(ctriang,'r-',transform=transf,lw=1.0,markersize=3,alpha=0.5)
                 lat,lon = ps.to_latlon(s5_vars['sare'])
@@ -336,9 +339,13 @@ def main():
                 )
                 plt.show()
 
-    ####
-
-    
+        ####
+        
+        layout = h5.VirtualLayout(shape=(len(spart_names),var_nmax),dtype=spart_dtype)
+        for i in range(len(spart_names)):
+            layout[i] = h5.VirtualSource(spart_names[i],'wv_nir',shape=(var_nmax,))
+        with h5.File("vds.h5",'w',liber='latest') as f:
+            f.create_virtual_dataset('wv_nir',layout) # fillvalue?
 
     print('MODIS Sketching Done')
     return
