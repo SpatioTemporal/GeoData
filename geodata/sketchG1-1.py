@@ -224,6 +224,10 @@ def main():
 
     nrows = 2
     ncols = 3
+
+    nrows = 1
+    ncols = 1
+
     proj   = ccrs.PlateCarree()
     # proj   = ccrs.Mollweide()
     # proj   = ccrs.Mollweide(central_longitude=-160.0)
@@ -232,6 +236,14 @@ def main():
 # https://stackoverflow.com/questions/33942233/how-do-i-change-matplotlibs-subplot-projection-of-an-existing-axis
     # plt.figure()
     fig,axs = plt.subplots(nrows=nrows,ncols=ncols,subplot_kw={'projection': proj})
+
+    # axs.set_facecolor('k')
+    # axs.patch.set_facecolor('black')
+    # axs.set_facecolor('black')
+
+    if nrows*ncols == 1:
+        fig = [fig]
+        axs = [axs]
 
     goes_line          = [False,False,False]
     modis_line         = [False,False,False]
@@ -242,20 +254,31 @@ def main():
     plt_show_1         = [False,False,True ]
 
     goes_line           = [False,False,False  ,True  ,False ,True   ]
-    modis_line          = [False,False,False  ,False ,True  ,True   ]
+    modis_line          = [False,False,True  ,False ,True  ,True   ]
     cover_plot          = [False,False,False  ,False ,False ,False  ]
     goes_plot_1         = [True, False,True   ,True  ,False ,True   ]
     goes_plot_1_points  = [False,False,False  ,True  ,False ,True   ]
     modis_plot_1        = [False,True, True   ,False ,True  ,True   ]
     modis_plot_1_points = [False,False,False  ,False ,True  ,True   ] 
-    plt_show_1          = [False,False,False  ,False ,False ,True   ]
+    plt_show_1          = [False,False,True   ,False ,False ,True   ]
     
     irow = [0,0,0,1,1,1]
     icol = [0,1,2,0,1,2]
 
-    recalculate=[True,False,False,True,False,False]
-    cover_rads =[2.0,0,0, 0.125,0,0]
+    # 2020-0125 pix 1
+    # goes_plot_1_res  = 9
+    # modis_plot_1_res = 9
 
+    #
+    goes_plot_1_res  = 6
+    modis_plot_1_res = 6
+
+    # recalculate=[True,False,False,True,False,False]
+    recalculate=[True,False,True,True,False,True]
+    cover_rads =[2.0,0,2, 0.125,0,0.125]
+    # cover_rads =[2.0,0,0, 0.125,0,0]
+
+    circle_plot =[ False   ,False       ,False   ,False         ,False   ,False ]
     circle_color=[ 'White' ,'lightgrey' ,'White' ,'navajowhite' ,'khaki' ,'White' ]
     modis_scatter_color=['darkcyan','darkcyan','darkcyan','darkcyan','cyan','cyan']
 
@@ -271,47 +294,68 @@ def main():
         ,None
     ]
     
-    for iter in range(6):
+    # for iter in range(6):
+    # for iter in [2,5]:
+    if True:
+        iter = 2
 
         ###########################################################################
         if recalculate[iter]:
             print('recalculating iter = ',iter)
 
             ###########################################################################
-            # HI 28.5N 177W
-            cover_resolution = 11
+            # cover_resolution = 11
+            cover_resolution = 5
+            # cover_type = 'circular'
+            cover_type = 'bounding_box'
 
-            # Near the Big Island
-            # cover_lat =   19.5-0.375
-            # cover_lon = -155.5+0.375
-
-            # Midway Island
-            # cover_lat =   28.2
-            # cover_lon = -177.35
-
-            # Ni'ihau
-            cover_lat =   21.9
-            cover_lon = -160.17
-
-            cover_rad = cover_rads[iter]
+            if cover_type == 'circular':
+                ###########################################################################
+                # HI 28.5N 177W
+    
+                # Near the Big Island
+                # cover_lat =   19.5-0.375
+                # cover_lon = -155.5+0.375
+    
+                # Midway Island
+                # cover_lat =   28.2
+                # cover_lon = -177.35
+    
+                # Ni'ihau
+                cover_lat =   21.9
+                cover_lon = -160.17
+    
+                cover_rad = cover_rads[iter]
+                
+                cover = ps.to_circular_cover(
+                    cover_lat
+                    ,cover_lon
+                    ,cover_rad
+                    ,cover_resolution)
+                #    ,range_size_limit=2000)
             
-            cover = ps.to_circular_cover(
-                cover_lat
-                ,cover_lon
-                ,cover_rad
-                ,cover_resolution)
-            #    ,range_size_limit=2000)
-        
-            cover_cat = catalog(resolution=11,sids=cover)
+            elif cover_type == 'bounding_box':
+                # Set cover to "bounding box."
+                cover_lat = np.array([15,15,38,38],dtype=np.float)
+                cover_lon = np.array([-174,-145,-145,-174],dtype=np.float)
+                cover = ps.to_hull_range_from_latlon(
+                    cover_lat
+                    ,cover_lon
+                    ,cover_resolution
+                )
+
+            cover_cat = catalog(resolution=cover_resolution,sids=cover)
             cover_sids_min = np.amin(cover)
             cover_sids_max = np.amax(cover) # Need to convert to terminator
             cover_sids_max = gd.spatial_terminator(cover_sids_max)
+        
             # for k in list(cover_cat.sdict.keys()):
             #     print('cc: ',hex(k))
-        
+
             ###########################################################################
             #
-            gm_catalog = catalog(resolution=7)
+            gm_cat_resolution = 5
+            gm_catalog = catalog(resolution=gm_cat_resolution)
             k=0
             for i in range(10):
                 while(goes_sids[k]<0):
@@ -347,7 +391,10 @@ def main():
 
         print('plotting iter ',iter)
         
-        ax = axs[irow[iter],icol[iter]]
+        if nrows*ncols == 1:
+            ax = axs[0]
+        else:
+            ax = axs[irow[iter],icol[iter]]
         
         if subplot_title[iter] is not None:
             ax.set_title(subplot_title[iter])
@@ -369,9 +416,12 @@ def main():
             plt.figtext(x0,y0+1*dy
                         ,"GOES:  "+goes_file+' BAND_3 (6.7mu), resolution = %i'%(goes_sids[k]&31)
                         ,fontsize=10)
-            plt.figtext(x0,y0+2*dy
-                        ,"ROI Cover: resolution = %d, radius = %0.2f (upper) %0.3f (lower) degrees, center = 0x%016x"%(cover_resolution,cover_rads[0],cover_rads[3],ps.from_latlon(npf64([cover_lat]),npf64([cover_lon]),cover_resolution)[0])
-                        ,fontsize=10)
+
+            if cover_type == 'circular':
+                plt.figtext(x0,y0+2*dy
+                            ,"ROI Cover: resolution = %d, radius = %0.2f (upper) %0.3f (lower) degrees, center = 0x%016x"%(cover_resolution,cover_rads[0],cover_rads[3],ps.from_latlon(npf64([cover_lat]),npf64([cover_lon]),cover_resolution)[0])
+                            ,fontsize=10)
+
             # plt.show()
             # exit()
 
@@ -384,20 +434,23 @@ def main():
             if goes_plot_1[iter]:
                 cc_data = cover_cat.get_all_data('goes')
                 csids,sdat = zip(*[cd.as_tuple() for cd in cc_data])
-                glat,glon = ps.to_latlon(csids)
+                if goes_plot_1_points[iter]:
+                    glat,glon = ps.to_latlon(csids)
 
-                csids_at_res = list(map(gd.spatial_clear_to_resolution,csids))
-                cc_data_accum = dict()
-                for cs in csids_at_res:
-                    cc_data_accum[cs] = []
-                for ics in range(len(csids_at_res)):
-                    cc_data_accum[csids_at_res[ics]].append(sdat[ics])
-                for cs in cc_data_accum.keys():
-                    if len(cc_data_accum[cs]) > 1:
-                        cc_data_accum[cs] = [sum(cc_data_accum[cs])/(1.0*len(cc_data_accum[cs]))]
-                tmp_values = np.array(list(cc_data_accum.values()))
-                vmin = np.amin(tmp_values)
-                vmax = np.amax(np.array(tmp_values))
+                # csids_at_res = list(map(gd.spatial_clear_to_resolution,csids))
+                # cc_data_accum = dict()
+                # for cs in csids_at_res:
+                #     cc_data_accum[cs] = []
+                # for ics in range(len(csids_at_res)):
+                #     cc_data_accum[csids_at_res[ics]].append(sdat[ics])
+                # for cs in cc_data_accum.keys():
+                #     if len(cc_data_accum[cs]) > 1:
+                #         cc_data_accum[cs] = [sum(cc_data_accum[cs])/(1.0*len(cc_data_accum[cs]))]
+                # tmp_values = np.array(list(cc_data_accum.values()))
+                # vmin = np.amin(tmp_values)
+                # vmax = np.amax(np.array(tmp_values))
+
+                cc_data_accum,vmin,vmax = gd.simple_collect(csids,sdat,force_resolution=goes_plot_1_res)
 
                 # print('a100: ',cc_data)
                 # print('cc_data       type: ',type(cc_data))
@@ -431,9 +484,9 @@ def main():
             if modis_plot_1[iter]:
                 cc_data_m = cover_cat.get_all_data('modis')
                 csids,sdat = zip(*[cd.as_tuple() for cd in cc_data_m])
-                mlat,mlon = ps.to_latlon(csids)
+                # mlat,mlon = ps.to_latlon(csids)
 
-                cc_data_m_accum,vmin,vmax = gd.simple_collect(csids,sdat)
+                cc_data_m_accum,vmin,vmax = gd.simple_collect(csids,sdat,force_resolution=modis_plot_1_res)
 
                 for cs in cc_data_m_accum.keys():
                     lli    = ps.triangulate_indices([cs])
@@ -461,6 +514,7 @@ def main():
                 #         ax.triplot(triang,'b-',transform=transf,lw=1,markersize=3,alpha=0.5)
                 #     ax.tripcolor(triang,facecolors=cd_plt,vmin=modis_min,vmax=modis_max,cmap='Blues',alpha=0.4)
                 if modis_plot_1_points[iter]:
+                    mlat,mlon = ps.to_latlon(csids)
                     ax.scatter(mlon,mlat,s=8,c=modis_scatter_color[iter])
                     # ax.scatter(mlon,mlat,s=8,c='cyan')
                     # ax.scatter(mlon,mlat,s=8,c='darkcyan')
@@ -476,9 +530,10 @@ def main():
                     cc_data_ = cover_cat.get_all_data('modis')
                 sids_,dat_ = zip(*[cd.as_tuple() for cd in cc_data_])
                 # print('sids_ len: ',len(sids_))
-                sids_test   = gd.spatial_clear_to_resolution(npi64([gd.spatial_coerce_resolution(s,5) for s in sids_]))
+                sids_test   = gd.spatial_clear_to_resolution(npi64([gd.spatial_coerce_resolution(s,gm_cat_resolution) for s in sids_]))
                 # print('sids_tlen: ',len(sids_test))
-                print('cover: 0x%016x'%ps.from_latlon(npf64([cover_lat]),npf64([cover_lon]),cover_resolution)[0])
+                if cover_type == 'circular':
+                    print('cover: 0x%016x'%ps.from_latlon(npf64([cover_lat]),npf64([cover_lon]),cover_resolution)[0])
                 geom_test   = sid_geometry(sids_test)
                 for s in geom_test.triangles.keys():
                     print(iter,' 0x%016x'%s)
@@ -505,11 +560,13 @@ def main():
                     triang = gm_catalog.sdict[k].geometry.triang()
                     ax.triplot(triang,'r-',transform=transf,lw=1,markersize=3)
 
-            if True:
+            if circle_plot[iter]:
                 phi=np.linspace(0,2*np.pi,64)
                 # rad=cover_rad
                 rad=0.125
                 ax.plot(cover_lon+rad*np.cos(phi),cover_lat+rad*np.sin(phi),transform=transf,color=circle_color[iter])
+
+            # ax.set_facecolor('k')
 
             if plt_show_1[iter]:
                 plt.show()
@@ -538,7 +595,7 @@ def main():
 #
 #    plt.show()
 
-    client.close()
+#    client.close()
 
     print(sw_timer.report_all())
 
