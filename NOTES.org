@@ -50,13 +50,17 @@ Added root fitting to theoretical model that matches linear fit very well. Thres
 *** geodata/sketchF1.py   Multi-file load and join, save to h5 files.
 *** geodata/sketchF2.py   Load h5 files and display to check.
 
-*** geodata/SketchG.py    Load MODIS data into a dataset
-*** geodata/SketchG0.py   Check the MODIS data in h5 format, including GRING
-*** geodata/SketchG1.py   Integrate GOES and MODIS data, show comparison viz.
+*** geodata/sketchG.py    Load MODIS data into a dataset
+*** geodata/sketchG0.py   Check the MODIS data in h5 format, including GRING
+*** geodata/sketchG1.py   Integrate GOES and MODIS data, show comparison viz.
 
-*** geodata/SketchG2.py   Compare GOES and MODIS Granules by "clearing" bits to level, uses GRING, and distribute across nodes
+*** geodata/sketchG1-1.py Show a whole MODIS granule, superimposed on GOES in a lat-lon bbox.
+*** geodata/sketchG2.py   Compare GOES and MODIS Granules by "clearing" bits to level, uses GRING, and distribute across nodes
 *** geodata/SketchH.py    Partition MODIS data
 *** geodata/SketchI0.py   Intersection example
+*** geodata/sketchJ0.py   Implement a new src_coord convention.
+*** geodata/sketchJ1.py   Implement a new src_coord convention. Added to GeoData/geodata.
+
 * Details on performing CCL on the GOES bands
 ** Choose a threshold
 ** Eliminate the sky
