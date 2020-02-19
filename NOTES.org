@@ -56,6 +56,9 @@ Added root fitting to theoretical model that matches linear fit very well. Thres
 
 *** geodata/sketchG1-1.py Show a whole MODIS granule, superimposed on GOES in a lat-lon bbox.
 *** geodata/sketchG2.py   Compare GOES and MODIS Granules by "clearing" bits to level, uses GRING, and distribute across nodes
+*** geodata/sketchJ0.py   Implement a new src_coord convention.
+*** geodata/sketchJ1.py   Implement a new src_coord convention. Added to GeoData/geodata.
+
 * Details on performing CCL on the GOES bands
 ** Choose a threshold
 ** Eliminate the sky

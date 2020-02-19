@@ -234,7 +234,7 @@ class join_goes_and_m2(object):
     def get_ref(self,attr):
         return getattr(self,attr)
 
-    def to_h5(self,workFileName):
+    def to_h5(self,workFileName,options={'src_coord_format':'fixedwidth'}):
         ###########################################################################
         ##### HDF5 SAVE DATASET
 
@@ -280,8 +280,17 @@ class join_goes_and_m2(object):
         
         workFile['/image']['stare_spatial'] = self.goes_indices[:]
         workFile['/image']['stare_temporal'] = gd.goes10_img_stare_time(self.goes_ds)[0]
-        workFile['/image']['goes_src_coord'] = np.arange(self.g_lat_size,dtype=np.int64)
-        workFile['/image']['merra2_src_coord'] = self.m2_src_coord_h5.flatten()
+
+        if options['src_coord_format'] == 'fixedwidth':
+            workFile['/image']['goes_src_coord']   = gd.make_id_fixedwidth_idx(self.goes_ds['data'].shape[1:]).flatten()
+            # np.arange(self.g_lat_size,dtype=np.int64)
+            workFile['/image']['merra2_src_coord'] = gd.id_fixedwidth_from_id(self.m2_src_coord_h5.flatten()
+                                                                              ,self.m2_src_coord_h5.shape)
+            # self.m2_src_coord_h5.flatten()
+        else:
+            workFile['/image']['goes_src_coord']   = np.arange(self.g_lat_size,dtype=np.int64)
+            workFile['/image']['merra2_src_coord'] = self.m2_src_coord_h5.flatten()
+
         workFile['/image']['merra2_tpw']       = self.m2_tpw_h5.flatten()
     
         workFile['/image_description']['nx'] = self.goes_ds['data'].shape[2]

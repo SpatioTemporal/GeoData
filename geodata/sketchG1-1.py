@@ -141,7 +141,33 @@ class catalog(object):
 
     def get_data(self,key,sid):
         return self.sdict[sid].data[key]
-            
+
+###########################################################################
+# https://stackoverflow.com/questions/41596386/tripcolor-using-rgb-values-for-each-vertex
+#
+def colors_to_cmap(colors):
+    '''
+    colors_to_cmap(nx3_or_nx4_rgba_array) yields a matplotlib colormap object that, when
+    that will reproduce the colors in the given array when passed a list of n evenly
+    spaced numbers between 0 and 1 (inclusive), where n is the length of the argument.
+
+    Example:
+      cmap = colors_to_cmap(colors)
+      zs = np.asarray(range(len(colors)), dtype=np.float) / (len(colors)-1)
+      # cmap(zs) should reproduce colors; cmap[zs[i]] == colors[i]
+    '''
+    colors = np.asarray(colors)
+    if colors.shape[1] == 3:
+        colors = np.hstack((colors, np.ones((len(colors),1))))
+    steps = (0.5 + np.asarray(range(len(colors)-1), dtype=np.float))/(len(colors) - 1)
+    return mpl.colors.LinearSegmentedColormap(
+        'auto_cmap',
+        {clrname: ([(0, col[0], col[0])] + 
+                   [(step, c0, c1) for (step,c0,c1) in zip(steps, col[:-1], col[1:])] + 
+                   [(1, col[-1], col[-1])])
+         for (clridx,clrname) in enumerate(['red', 'green', 'blue', 'alpha'])
+         for col in [colors[:,clridx]]},
+        N=len(colors))
 
 ###########################################################################
 # Helper functions
@@ -254,7 +280,7 @@ def main():
     plt_show_1         = [False,False,True ]
 
     goes_line           = [False,False,False  ,True  ,False ,True   ]
-    modis_line          = [False,False,True  ,False ,True  ,True   ]
+    modis_line          = [False,False,False  ,False ,True  ,True   ]
     cover_plot          = [False,False,False  ,False ,False ,False  ]
     goes_plot_1         = [True, False,True   ,True  ,False ,True   ]
     goes_plot_1_points  = [False,False,False  ,True  ,False ,True   ]
@@ -265,13 +291,43 @@ def main():
     irow = [0,0,0,1,1,1]
     icol = [0,1,2,0,1,2]
 
+    coastline_color = 'black'
+    coastline_color = 'black'
+
+    # blend
+    blend_tripcolor_1       = True
+    blend_tripcolor_1_res   = 10
+    # blend_tripcolor_1_res   = 9 # FFE
+    # blend_tripcolor_1_res   = 6 # Test
+    blend_tripcolor_1_cmap  = None
+    blend_tripcolor_1_alpha = 1
+    blend_tripcolor_1_gamma_g  = 0.65
+    blend_tripcolor_1_gamma_m  = 0.65
+    if blend_tripcolor_1:
+        goes_plot_1  = [False]*6
+        modis_plot_1 = [False]*6
+        # coastline_color = 'white'
+        coastline_color = 'black'
+
     # 2020-0125 pix 1
     # goes_plot_1_res  = 9
     # modis_plot_1_res = 9
-
     #
-    goes_plot_1_res  = 6
-    modis_plot_1_res = 6
+    # goes_plot_1_res  = 6
+    # modis_plot_1_res = 6
+    #
+    # plot_1_res = 9 # FFE
+    plot_1_res = 6
+    goes_plot_1_res  = plot_1_res
+    modis_plot_1_res = plot_1_res
+
+    # Colors
+    goes_plot_1_tripcolor  = 'Reds'
+    modis_plot_1_tripcolor = 'Blues'
+    #
+    common_alpha = 0.7
+    goes_plot_1_alpha  = common_alpha
+    modis_plot_1_alpha = common_alpha
 
     # recalculate=[True,False,False,True,False,False]
     recalculate=[True,False,True,True,False,True]
@@ -282,7 +338,7 @@ def main():
     circle_color=[ 'White' ,'lightgrey' ,'White' ,'navajowhite' ,'khaki' ,'White' ]
     modis_scatter_color=['darkcyan','darkcyan','darkcyan','darkcyan','cyan','cyan']
 
-    nodes_cover=[1,2,1,1,2,1]
+    nodes_cover=[1,2,1,1,2,1] # 1 == goes, 2 == modis, 0 == None
     # nodes_cover=[0,0,0,0,0,0]
 
     subplot_title = [
@@ -304,26 +360,28 @@ def main():
             print('recalculating iter = ',iter)
 
             ###########################################################################
-            # cover_resolution = 11
-            cover_resolution = 5
-            # cover_type = 'circular'
-            cover_type = 'bounding_box'
+            cover_resolution = 11
+            # cover_resolution = 12
+            cover_type = 'circular'
+            # cover_resolution = 6
+            #+ cover_resolution = 5
+            #+ cover_type = 'bounding_box'
 
             if cover_type == 'circular':
                 ###########################################################################
                 # HI 28.5N 177W
     
                 # Near the Big Island
-                # cover_lat =   19.5-0.375
-                # cover_lon = -155.5+0.375
+                cover_lat =   19.5-0.375
+                cover_lon = -155.5+0.375
     
                 # Midway Island
                 # cover_lat =   28.2
                 # cover_lon = -177.35
     
                 # Ni'ihau
-                cover_lat =   21.9
-                cover_lon = -160.17
+                # cover_lat =   21.9
+                # cover_lon = -160.17
     
                 cover_rad = cover_rads[iter]
                 
@@ -401,7 +459,7 @@ def main():
         if False:
             ax.set_global()
         if True:
-            ax.coastlines()
+            ax.coastlines(color=coastline_color)
     
 
         if iter == 0:
@@ -471,7 +529,7 @@ def main():
                                  ,facecolors=cd_plt
                                  ,edgecolors='k',lw=0
                                  ,shading='flat'
-                                 ,vmin=vmin,vmax=vmax,cmap='Reds',alpha=0.45)
+                                 ,vmin=vmin,vmax=vmax,cmap=goes_plot_1_tripcolor,alpha=goes_plot_1_alpha)
     
                 # for cd in cc_data:
                 #     lli    = ps.triangulate_indices([cd.sid])
@@ -504,7 +562,7 @@ def main():
                                  ,facecolors=cd_plt
                                  ,edgecolors='k',lw=0
                                  ,shading='flat'
-                                 ,vmin=vmin,vmax=vmax,cmap='Blues',alpha=0.45)
+                                 ,vmin=vmin,vmax=vmax,cmap=modis_plot_1_tripcolor,alpha=modis_plot_1_alpha)
 
                 # for cd in cc_data_m:
                 #     lli    = ps.triangulate_indices([cd.sid])
@@ -519,6 +577,60 @@ def main():
                     # ax.scatter(mlon,mlat,s=8,c='cyan')
                     # ax.scatter(mlon,mlat,s=8,c='darkcyan')
 
+            # blend_tripcolor_1 = False
+            # blend_tripcolor_res_1  = 6
+            # blend_tripcolor_1_cmap  = None
+            # blend_tripcolor_1_alpha = 1
+            if blend_tripcolor_1:
+                cc_data = cover_cat.get_all_data('goes')
+                csids,sdat = zip(*[cd.as_tuple() for cd in cc_data])
+                cc_data_accum,vmin,vmax = gd.simple_collect(csids,sdat,force_resolution=blend_tripcolor_1_res)
+
+                cc_data_m = cover_cat.get_all_data('modis')
+                csids_m,sdat_m = zip(*[cd.as_tuple() for cd in cc_data_m])
+                cc_data_m_accum,vmin_m,vmax_m = gd.simple_collect(csids_m,sdat_m,force_resolution=blend_tripcolor_1_res)
+
+                data_accum_keys = set()
+                for cs in cc_data_accum.keys():
+                    data_accum_keys.add(cs)
+                for cs in cc_data_m_accum.keys():
+                    data_accum_keys.add(cs)
+                for cs in data_accum_keys:
+                    # print('item: ',hex(cs),cc_data_accum[cs])
+                    lli    = ps.triangulate_indices([cs])
+                    triang = tri.Triangulation(lli[0],lli[1],lli[2])
+                    try:
+                        cd_plt_g = (np.array(cc_data_accum[cs])-vmin)/(vmax-vmin)
+                        cd_plt_g   = cd_plt_g ** blend_tripcolor_1_gamma_g
+                    except:
+                        cd_plt_g = np.array([0])
+                    try:
+                        cd_plt_m = (np.array(cc_data_m_accum[cs])-vmin_m)/(vmax_m-vmin_m)
+                        cd_plt_m = cd_plt_m ** blend_tripcolor_1_gamma_m
+                    except:
+                        cd_plt_m = np.array([0])
+                    ######
+                    # blend 1 & 2
+                    # cd_plt = np.array([[cd_plt_g,0,cd_plt_m]])
+                    ######
+                    # blend 3
+                    # print('len: ',cd_plt_g.shape,cd_plt_m.shape)
+                    cd_plt = np.array([[cd_plt_g[0],0.5*(cd_plt_g+cd_plt_m)[0],cd_plt_m[0]]])
+                    cd_cmp = colors_to_cmap(cd_plt)
+                    zs = np.asarray(range(3),dtype=np.float)/2.0
+
+                    ax.tripcolor(triang
+                                 ,zs
+                                 ,cmap=cd_cmp
+                                 # ,facecolors=cd_plt
+                                 ,edgecolors='k',lw=0
+                                 ,shading='gouraud'
+                                 # ,shading='flat'
+                                 # ,vmin=vmin,vmax=vmax
+                                 # ,cmap=blend_tripcolor_1_cmap
+                                 ,alpha=blend_tripcolor_1_alpha)
+                                 # ,vmin=vmin,vmax=vmax,cmap=blend_tripcolor_1_cmap,alpha=blend_tripcolor_1_alpha)
+            
             if goes_plot_1[iter]:
                 if goes_plot_1_points[iter]:
                     ax.scatter(glon,glat,s=8,c='black')
@@ -538,7 +650,8 @@ def main():
                 for s in geom_test.triangles.keys():
                     print(iter,' 0x%016x'%s)
                 triang_test = geom_test.triang()
-                ax.triplot(triang_test,'g-',transform=transf,lw=1.0,markersize=3,alpha=0.75)
+                # ax.triplot(triang_test,'g-',transform=transf,lw=1.0,markersize=3,alpha=0.75)
+                ax.triplot(triang_test,'k-',transform=transf,lw=1.0,markersize=3,alpha=0.5)
     
             if False:
                 for i in range(0,10):
@@ -550,7 +663,8 @@ def main():
                 # lli = ps.triangulate_indices(ps.expand_intervals(cover,9,result_size_limit=2048))
                 lli = ps.triangulate_indices(cover)
                 ax.triplot(tri.Triangulation(lli[0],lli[1],lli[2])
-                           ,'g-',transform=transf,lw=1,markersize=3)
+                           ,'k-',transform=transf,lw=1,markersize=3,alpha=0.5)
+                           # ,'g-',transform=transf,lw=1,markersize=3)
 
             if False:
                 # k = gm_catalog.sdict.keys()[0]
