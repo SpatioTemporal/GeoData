@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
-import os
+
+###########################################################################
+# Partition MODIS granule into source files in STARE
+###########################################################################
+
+import os, fnmatch
 
 import matplotlib as mpl
 import matplotlib.mlab as mlab
@@ -75,25 +80,27 @@ class sare_partition(object):
             src_vars_n = vars_n
             tgt_vars_n = vars_n
 
-        print('writing %i items into an array of %i items.'%(src_vars_n,tgt_vars_n))
-        print('input array size %i'%(len(vars['sare'])))
+        # print('writing %i items into an array of %i items.'%(src_vars_n,tgt_vars_n))
+        # print('input array size %i'%(len(vars['sare'])))
 
         outFile = h5.File(self.fname,'w')
 
-        outFile.create_dataset('metadata',[]
+        outFile.create_dataset('metadata',[1]
                                ,dtype=np.dtype([('sare_id',np.int64)
                                                 ,('shape0',np.int32)
                                                 ,('shape1',np.int32)
-                                                ,('dataset_name','S%i'%len(dataset_name))
-                                                ,('src_name','S%i'%len(self.src_name))
+                                                ,('dataset_name','S1024')
+                                                ,('src_name','S1024')
+                                                # ,('dataset_name','S%i'%len(dataset_name))
+                                                # ,('src_name','S%i'%len(self.src_name))
                                                 ,('n_data',np.int64)
                                ]))
-        outFile['metadata']['sare_id']      = self.sid
-        outFile['metadata']['shape0']       = shape[0]
-        outFile['metadata']['shape1']       = shape[1]
-        outFile['metadata']['dataset_name'] = dataset_name
-        outFile['metadata']['src_name']     = self.src_name
-        outFile['metadata']['n_data']       = src_vars_n
+        outFile['metadata']['sare_id']       = self.sid
+        outFile['metadata']['shape0']        = shape[0]
+        outFile['metadata']['shape1']        = shape[1]
+        outFile['metadata']['dataset_name']  = dataset_name
+        outFile['metadata']['src_name']      = self.src_name
+        outFile['metadata']['n_data']        = src_vars_n
         
         outFile.create_dataset(dataset_name,[tgt_vars_n],dtype=self.dtype)
         for i in vars:
@@ -102,6 +109,12 @@ class sare_partition(object):
             tmp = np.full([tgt_vars_n],-1,dtype=vars[i].dtype)
             tmp[0:src_vars_n] = vars[i][0:src_vars_n]
             outFile[dataset_name][i] = tmp
+            ## if src_vars_n > 0:
+            ##     print(i,' 200 i,mn,mx ',np.amin(tmp),np.amax(tmp))
+            ##     print(i,' 200 i,mn,mx ',np.amin(vars[i]),np.amax(vars[i]))
+            ## else:
+            ##     print(i,' 201 i,mn,mx ',vars[i])
+            ##     print(i,' 201 i,mn,mx ',tmp)
             # print(i,' i,tmp ',tmp)
             
         outFile.close()
@@ -111,21 +124,29 @@ class sare_partition(object):
         inFile = h5.File(self.fname,'r')
 
         # print('i.attrs: ',inFile.keys())
-        dataset_name = inFile['metadata']['dataset_name']
-        shape        = (inFile['metadata']['shape0'],inFile['metadata']['shape1'])
-        src_vars_n   = inFile['metadata']['n_data']
+        dataset_name = inFile['metadata']['dataset_name'][0]
+        shape        = (inFile['metadata']['shape0'][0],inFile['metadata']['shape1'][0])
+        src_vars_n   = inFile['metadata']['n_data'][0]
+        # print('read1 reading %s of shape %s and %i records.'%(dataset_name,shape,src_vars_n))
         sare         = inFile[dataset_name]['sare'][0:src_vars_n].copy()
         src_coord    = inFile[dataset_name]['src_coord'][0:src_vars_n].copy()
         # print('if.dtype: ',inFile[dataset_name].dtype)
-        print('if.dtype.names: ',inFile[dataset_name].dtype.names)
-        print('reading %i items each.'%(src_vars_n))
+        # print('if.dtype.names: ',inFile[dataset_name].dtype.names)
+        # print('reading %i items each.'%(src_vars_n))
         vars = {}
         for i in inFile[dataset_name].dtype.names:
             vars[i] = np.zeros([src_vars_n],dtype=inFile[dataset_name][i].dtype)
             vars[i][:] = inFile[dataset_name][i][0:src_vars_n].copy()
+            ## print('    %s: type '%(i),type(vars[i]),vars[i].dtype,vars[i].shape)
+            ## if vars[i].size > 0:
+            ##     print('    %s: mn,mx = %s,%s'%(i,np.amin(vars[i]),np.amax(vars[i])))
+            ## else:
+            ##     print('    %s: mn,mx = %s,%s'%(i,vars[i],vars[i]))
             # print(i,' i,vars[i] ',vars[i])
+        vars_dtype     = inFile[dataset_name].dtype;
+        metadata_dtype = inFile['metadata'].dtype;
         inFile.close()
-        return (shape,dataset_name,vars)
+        return (shape,dataset_name,vars,vars_dtype,metadata_dtype)
     
 #
 ###########################################################################
@@ -219,7 +240,8 @@ def main():
 
     modis_sets = SortedDict()
     tKeys = list(mod05_catalog.tid_centered_index.keys())
-    for tid in tKeys[0:1]:
+    for tid in tKeys:
+    # for tid in tKeys[0:1]:
     # for tid in mod05_catalog.tid_centered_index: # replace with temporal comparison
         if(len(mod05_catalog.tid_centered_index[tid])>1 or len(mod03_catalog.tid_centered_index[tid])>1):
             raise NotImplementedError('sketchH only written for preselected pairs of MODIS files')
@@ -227,8 +249,8 @@ def main():
                                       ,mod03_catalog.tid_centered_index[tid][0]
                                       ,data_sourcedir = data_sourcedir)
         modis_sets[tid].load_wv_nir().load_geo().make_sare()
-        print(hex(tid),modis_sets[tid].data,modis_sets[tid].location)
-        print(modis_sets[tid].info())
+        # print(hex(tid),modis_sets[tid].data,modis_sets[tid].location)
+        # print(modis_sets[tid].info())
 
     ###########################################################################
     proj=ccrs.PlateCarree()
@@ -244,12 +266,13 @@ def main():
     vmin = np.amin(np.array([a.vmin() for a in modis_sets.values()]))
     vmax = np.amax(np.array([a.vmax() for a in modis_sets.values()]))
     tKeys = list(modis_sets.keys())
-    tid   = tKeys[0]
+    tKeys = [tKeys[1]]
+    # tid   = tKeys[0]
     # tKeys = tKeys[1:]
     # tKeys = tKeys[-2:-1]
     # for tid in mod05_catalog.tid_centered_index: # replace with temporal comparison
-    if True:
-    # for tid in tKeys:
+    # if True:
+    for tid in tKeys:
         if False:
             plt.scatter(
                 modis_sets[tid].geo_lon
@@ -260,39 +283,53 @@ def main():
                 ,vmin=vmin
                 ,vmax=vmax
             )
+        
         tmp_data_src_name = mod05_catalog.tid_centered_index[tid][0][0:-4]
-        print('tmp_data_src_name: ',tmp_data_src_name)
+        # print('tmp_data_src_name: ',tmp_data_src_name)
         # clons,clats,cintmat = ps.triangulate_indices(modis_sets[tid].cover)
         tmp_cover = ps.to_compressed_range(modis_sets[tid].cover)
         # tmp_cover = ps.expand_intervals(tmp_cover,2)
-        tmp_cover = ps.expand_intervals(tmp_cover,5)
-        clons,clats,cintmat = ps.triangulate_indices(tmp_cover)
-        ctriang = tri.Triangulation(clons,clats,cintmat)
+        tmp_cover = ps.expand_intervals(tmp_cover,4)
+        # tmp_cover = ps.expand_intervals(tmp_cover,6,result_size_limit=1600)
+        if False:
+            clons,clats,cintmat = ps.triangulate_indices(tmp_cover)
+            ctriang = tri.Triangulation(clons,clats,cintmat)
         spart_nmax = -1
-        tmp_cover = tmp_cover[0:10]
+        # tmp_cover = tmp_cover[0:10]
         idx_all = {}
         for sid in tmp_cover:
-            print(sid,' sid, indexing cover sid: 0x%016x'%sid)
+            # print(sid,' sid, indexing cover sid: 0x%016x'%sid)
             idx_all[sid] = np.where(ps.cmp_spatial(np.array([sid],dtype=np.int64),modis_sets[tid].sare) != 0)
             spart_nmax = max(spart_nmax,len(modis_sets[tid].sare[idx_all[sid]]))
-        print('max spart items to write per file: ',spart_nmax)
-
+        # print('max spart items to write per file: ',spart_nmax)
+        spart_nmax = None # Variable lengths
+        
         spart_names = []
         for sid in tmp_cover:
             idx = idx_all[sid][0]
-            print(sid,' sid,cover sid: 0x%016x'%sid,' len(idx)=%i'%(len(idx)))
+            # print(sid,' sid,cover sid: 0x%016x'%sid,' len(idx)=%i'%(len(idx)))
             # print('idx:      ',idx)
             # print('idx type: ',type(idx))
-            spart_h5_namebase = 't%016x.%s'%(tid,tmp_data_src_name+'.sketchH')
+            spart_h5_namebase = 't%016x.%s'%(tid,tmp_data_src_name+'.sketchJ0')
+
+            # MAKE
             spart_h5 = sare_partition(sid,spart_h5_namebase,src_name=tmp_data_src_name,var_nmax = spart_nmax)
-            spart_h5.write1(
-                shape        = [modis_sets[tid].nAcross,modis_sets[tid].nAlong]
-                ,dataset_name = 'wv_nir'
-                ,vars         = {
-                    'sare':modis_sets[tid].sare[idx]
-                    ,'src_coord':np.arange(len(modis_sets[tid].sare))[idx]
-                    ,'Water_Vapor_Near_Infrared':modis_sets[tid].data_wv_nir.flatten()[idx]}
+
+            # CHECK
+            # print(' data_wv_nir mn,mx: ',np.amin(modis_sets[tid].data_wv_nir),np.amax(modis_sets[tid].data_wv_nir))
+
+            # WRITE
+            if True:
+                spart_h5.write1(
+                    shape        = [modis_sets[tid].nAcross,modis_sets[tid].nAlong]
+                    ,dataset_name = 'wv_nir'
+                    ,vars         = {
+                        'sare':modis_sets[tid].sare[idx]
+                        ,'src_coord':np.arange(len(modis_sets[tid].sare))[idx]
+                        ,'Water_Vapor_Near_Infrared':modis_sets[tid].data_wv_nir.flatten()[idx]}
                 )
+                # print('')
+            
             spart_names.append(spart_h5.fname)
             if False:
                 ax = init_figure(proj)
@@ -307,9 +344,12 @@ def main():
                     ,vmax=vmax
                 )
                 plt.show()
+
+            # READ
             spart_h5_1 = sare_partition(sid,spart_h5_namebase)
-            spart_dtype = spart_h5_1.dtype
-            (s5_shape,s5_name,s5_vars) = spart_h5_1.read1()
+            (s5_shape,s5_name,s5_vars,s5_vars_dtype,s5_metadata_dtype) = spart_h5_1.read1()
+            # print('found and loaded %s of type %s.'%(s5_name,s5_vars_dtype))
+            
             idx = s5_vars['src_coord']
             if False:
                 ax = init_figure(proj)
@@ -340,12 +380,56 @@ def main():
                 plt.show()
 
         ####
-        
-        layout = h5.VirtualLayout(shape=(len(spart_names),var_nmax),dtype=spart_dtype)
-        for i in range(len(spart_names)):
-            layout[i] = h5.VirtualSource(spart_names[i],'wv_nir',shape=(var_nmax,))
-        with h5.File("vds.h5",'w',liber='latest') as f:
-            f.create_virtual_dataset('wv_nir',layout) # fillvalue?
+
+        ## # Define the layout of the virtual data set.
+        ## var_ns      = [len(idx_all[i][0]) for i in idx_all]
+        ## var_n_cumul = [0]
+        ## for i in range(len(idx_all)):
+        ##     var_n_cumul.append(var_n_cumul[-1]+var_ns[i])
+        ## # var_n_total = sum([len(i) for i in idx_all])
+        ## var_n_total = var_n_cumul[-1]
+        ## 
+        ## print('')
+        ## print('var_ns:      ',var_ns)
+        ## print('var_n_cumul: ',var_n_cumul)
+        ## print('var_n_total: ',var_n_total)
+        ## 
+        ## layout    = h5.VirtualLayout(shape=(var_n_total,),dtype=s5_vars_dtype)
+        ## print('layout:      ',layout)
+        ## 
+        ## layout_md = h5.VirtualLayout(shape=(len(spart_names),),dtype=s5_metadata_dtype)
+        ## print('layout_md:   ',layout_md)
+        ## print('')
+        ## 
+        ## layout_idx = np.arange(var_n_total)
+        ## 
+        ## for i in range(len(spart_names)):
+        ##     print(i,' part: ',var_n_cumul[i],var_n_cumul[i+1],', ',var_ns[i])
+        ## print('')
+        ## 
+        ## # print('s5_metadata_dtype: ',s5_metadata_dtype)
+        ## ds_name = 'wv_nir'
+        ## for i in range(len(spart_names)):
+        ##     # Just concatenate
+        ##     #++ layout[var_n_cumul[i]:var_n_cumul[i+1]] = h5.VirtualSource(spart_names[i],ds_name,shape=(var_ns[i],))
+        ##     # What I would like to do...
+        ##     if var_ns[i] != 0:
+        ##         with h5.File(spart_names[i]) as h:
+        ##             vs = h5.VirtualSource(spart_names[i],ds_name,shape=(var_ns[i],))
+        ##             for j in range(h[ds_name]['src_coord'].shape[0]): # Should be var_ns[i]
+        ##                 layout[h[ds_name]['src_coord'][j]] = vs[j] # next step, try [j,k] for a virtual image....
+        ##     # else: # zero-case
+        ##     #    layout[var_n_cumul[i]:var_n_cumul[i+1]] = h5.VirtualSource(spart_names[i],ds_name,shape=(var_ns[i],))                        
+        ##     
+        ## for i in range(len(spart_names)):
+        ##     layout_md[i] = h5.VirtualSource(spart_names[i],'metadata',shape=(1,))
+        ##     
+        ## vds_fname = '.'.join([tmp_data_src_name,ds_name,'sketchJ0.vds.h5'])
+        ## print('writing ',vds_fname)
+        ## with h5.File(vds_fname,'w',libver='latest') as f:
+        ##     f.create_virtual_dataset('wv_nir',layout)      # fillvalue?
+        ##     f.create_virtual_dataset('metadata',layout_md) # fillvalue?
+        ##     # f.create_dataset(['image_lookup']...)
 
     print('MODIS Sketching Done')
     return

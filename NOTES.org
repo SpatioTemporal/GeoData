@@ -57,6 +57,14 @@ Added root fitting to theoretical model that matches linear fit very well. Thres
 *** geodata/SketchG2.py   Compare GOES and MODIS Granules by "clearing" bits to level, uses GRING, and distribute across nodes
 *** geodata/SketchH.py    Partition MODIS data
 *** geodata/SketchI0.py   Intersection example
+*** geodata/SketchJ0.py
+*** geodata/SketchJ1.py
+*** geodata/SketchJ2.py
+*** geodata/sketchK0.py   Load GOES & MODIS, lexsort, nadir vs. wing resolution - shows box on lower left and nadir
+*** geodata/sketchK0a.py  Load GOES & MODIS, lexsort, nadir vs. wing resolution - plot 2 scans, allow zoom to show overlap
+*** geodata/sketchK1.py
+*** geodata/sketchK2.py
+
 * Details on performing CCL on the GOES bands
 ** Choose a threshold
 ** Eliminate the sky

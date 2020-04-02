@@ -416,6 +416,30 @@ def modis_cover_from_gring(h,resolution=7,ntri_max=1000):
     gring_lat=np.array(eval(metadata['ARCHIVEDMETADATA']['GPOLYGON']['GPOLYGONCONTAINER']['GRINGPOINT']['GRINGPOINTLATITUDE']['VALUE'])[:],dtype=np.double)
     return ps.to_hull_range_from_latlon(gring_lat[gring_seq],gring_lon[gring_seq],resolution,ntri_max)
 
+########
+
+def lexsort_data(lon,lat,data):
+    """Apply numpy.lexsort to geolocations."""
+    ilex = np.lexsort((lat,lon))
+    return lon[ilex],lat[ilex],data[ilex],ilex
+
+def subset_data_from_lonlatbox(lon,lat,data,lon_range,lat_range):
+    """Return data within the bounds of the lon_range-by-lat_range box. Data and geolocations are presumed sorted by lexsort_data."""
+    idlon2 = np.where((lon_range[0] <= lon ) & (lon <= lon_range[1]))
+    lon2 = lon[idlon2]
+    lat2 = lat[idlon2]
+    dat2 = data[idlon2]
+    
+    idlat3 = np.where((lat_range[0] <= lat2 ) & (lat2 <= lat_range[1]))
+    lon3 = lon2[idlat3]
+    lat3 = lat2[idlat3]
+    dat3 = dat2[idlat3]
+
+    return lon3,lat3,dat3
+
+########
+
+
 if __name__ == '__main__':
 
   print('running')
