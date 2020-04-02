@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# <<<<<<< HEAD
+
 ###########################################################################
 # Use STARE partitions to construct something resembling the original granule.
 ###########################################################################
@@ -156,5 +158,6 @@ def main():
     print('MODIS Sketching Done')
     return
 
+# =======
 if __name__ == '__main__':
     main()

@@ -1,5 +1,4 @@
 
-
 # Routines applying STARE to various Earth Science data sets.
 
 # geodata.py
@@ -46,6 +45,68 @@ def shiftarg_lon(lon):
 
 def resolution(km):
     return 10-np.log2(km/10)
+
+###########################################################################
+# Array index helpers & serializations. Based on numpy defaults.
+# TODO Generalizing the following should be straightforward.
+#
+def id_from_ij(i,j,shape):
+    "Return usual linear index into 2D array, where shape = [Nj,Ni] and array is indexed as a[j,i]"
+    
+    return i+j*shape[1]
+
+def ij_from_id(id,shape):
+    return id % shape[1],int(id/shape[1])
+
+def make_id_idx(shape):
+    "Simmilar to using np.arange to count your way through an array. Assumes 2D. Last dim most rapidly changing."
+    idx = np.zeros(shape,dtype=np.int64)
+    for j in np.arange(shape[0]):
+        for i in np.arange(shape[1]):
+            idx[j,i] = id_from_ij(i,j,shape)
+    return idx
+
+def id_fixedwidth_from_ij(ix,jy,shape):
+    "Packs the two array index values into a single 64-bit integer. Note: a little sloppy in type decl."
+    # TODO Generalize to more dimensions, which is why we're keeping shape here.
+    return (jy << 32)+ix;
+
+def ij_from_id_fixedwidth(id1,shape):
+    "Unpack two array index values from a single 64-bit integer. Note we're making assumptions about types."
+    return (int(id1) & ((1 << 32)-1)),(int(id1) >> 32)
+
+def make_id_fixedwidth_idx(shape):
+    "Packs array coords into an inter. Similar to assuming Ni = 2**32. Assumes 2D. Last dim most rapidly changing."
+    idx = np.zeros(shape,dtype=np.int64)
+    for j in np.arange(shape[0]):
+        for i in np.arange(shape[1]):
+            idx[j,i] = id_fixedwidth_from_ij(i,j,shape)
+    return idx
+
+def id_from_id_fixedwidth(id1,shape):
+    # print('idfidf: type ',type(id1),shape)
+    if type(id1) != np.ndarray:
+        i,j = ij_from_id_fixedwidth(id1,shape)
+        return id_from_ij(i,j,shape)
+    elif len(shape) == 1:
+        return id1.copy()
+    elif len(shape) == 2:
+        return np.array([id_from_id_fixedwidth(i_,shape) for i_ in id1],dtype = id1.dtype)
+    raise NotImplemented
+
+def id_fixedwidth_from_id(id,shape):
+    if type(id) != np.ndarray:
+        i,j = ij_from_id(id,shape)
+        return id_fixedwidth_from_ij(i,j,shape)
+    elif len(shape) == 1:
+        return id.copy()
+    elif len(shape) == 2:
+        return np.array([id_fixedwidth_from_id(i_,shape) for i_ in id],dtype = id.dtype)
+    raise NotImplemented
+
+###########################################################################
+#
+#
 
 def triangulate1(lats,lons):
     "Prepare data for tri.Triangulate."
