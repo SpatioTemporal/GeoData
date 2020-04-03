@@ -56,8 +56,8 @@ Added root fitting to theoretical model that matches linear fit very well. Thres
 
 *** geodata/sketchG1-1.py Show a whole MODIS granule, superimposed on GOES in a lat-lon bbox.
 *** geodata/sketchG2.py   Compare GOES and MODIS Granules by "clearing" bits to level, uses GRING, and distribute across nodes
-*** geodata/SketchH.py    Partition MODIS data
-*** geodata/SketchI0.py   Intersection example
+*** geodata/sketchH.py    Partition MODIS data
+*** geodata/sketchI0.py   Intersection example
 *** geodata/sketchJ0.py   Implement a new src_coord convention.
 *** geodata/sketchJ1.py   Implement a new src_coord convention. Added to GeoData/geodata.
 *** geodata/sketchJ2.py   Virtual dataset experiments
@@ -66,8 +66,9 @@ Added root fitting to theoretical model that matches linear fit very well. Thres
 *** geodata/sketchK0a.py  Load GOES & MODIS, lexsort, nadir vs. wing resolution - plot 2 scans, allow zoom to show overlap
 *** geodata/sketchK1.py   GOES+MODIS Template   
 *** geodata/sketchK2.py   GOES+MODIS - plot 2 scans, 2 subplots, full granule + box on left
-*** geodata/SketchL0.py   Rework native array index encoding (src_coord, early version of  sketchJ*.py?)
-*** geodata/SketchL1.py   Rework native array index encoding (src_coord, early version of  sketchJ*.py?)
+*** geodata/sketchL0.py   Rework native array index encoding (src_coord, early version of  sketchJ*.py?)
+*** geodata/sketchL1.py   Rework native array index encoding (src_coord, early version of  sketchJ*.py?)
+*** geodata/sketchM0.py   Visualize root polyhedron
 
 * Details on performing CCL on the GOES bands
 ** Choose a threshold
