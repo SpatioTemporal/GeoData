@@ -6,6 +6,8 @@ import matplotlib.tri as tri
 import cartopy.crs as ccrs
 import pystare as ps
 
+import datetime
+
 
 def main():
 
@@ -42,6 +44,17 @@ def main():
     zlons,zlats,zintmat = gd.triangulate1(zlatv,zlonv)
     ztriang = tri.Triangulation(zlons,zlats,zintmat)
     ax.triplot(ztriang,'r-',transform=transf,lw=1.0,markersize=3,alpha=1.0)
+
+    an = ax.annotate(
+         'Figure:  sketchM0\n'
+        +'Date:    %s\n'%datetime.date.today()
+        +'Version: 2020-0407-1\n'
+        +'Author:  M. Rilee, RSTLLC\n'
+        +'Email:   mike@rilee.net\n'
+        ,xy=(0.7,0.025)
+        ,xycoords='figure fraction'
+        ,family='monospace'
+        )
 
     plt.show()
 

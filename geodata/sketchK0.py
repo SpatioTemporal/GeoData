@@ -16,6 +16,8 @@ import pystare as ps
 import h5py as h5
 from netCDF4 import Dataset
 
+import datetime
+
 import modis_coarse_to_fine_geolocation.modis_5km_to_1km_geolocation as pascal_modis
 
 ###########################################################################
@@ -179,11 +181,21 @@ def main():
     # GOES 10 (Band 5, 4km)
     # 0.036 deg
     g_lon,g_lat,g_dat = load_goes()
+    if False:
+        idx = range(1000)
+        g_lon = g_lon[idx]
+        g_lat = g_lat[idx]
+        g_dat = g_dat[idx]
     g_lon_s,g_lat_s,g_dat_s,g_ilex = gd.lexsort_data(g_lon,g_lat,g_dat)
     
     # MODIS Water Vapor NIR 1km
     # 1.57e-4 radians -- 0.009 deg
     m_lon,m_lat,m_dat = load_modis()
+    if False:
+        idx = range(1000)
+        m_lon = m_lon[idx]
+        m_lat = m_lat[idx]
+        m_dat = m_dat[idx]
     print('m_lon size: ',m_lon.size)
     m_str = np.zeros([m_lon.size],dtype=np.int64)
     for irow in range(2030):
@@ -313,7 +325,17 @@ def main():
                         inda = ps.adapt_resolution_to_proximity(ind)
                         plot_sivs(inda,c0='g',c1='g',transf=transf,ax=ax)
                 
-                    
+                an = ax.annotate(
+                    'Figure:  sketchK0: GOES square and MODIS nadir sampling\n'
+                    +'Date:    %s\n'%datetime.date.today()
+                    +'Version: 2020-0407-1\n'
+                    +'Author:  M. Rilee, RSTLLC\n'
+                    +'Email:   mike@rilee.net\n'
+                    ,xy=(0.7,0.025)
+                    ,xycoords='figure fraction'
+                    ,family='monospace'
+                )
+                        
                 plt.show()
                 return
         

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Plot a few level 0 triangles. We found an error in the library with this sketch.
+
 import pystare
 # from pyhdf.SD import SD
 import cartopy.crs as ccrs

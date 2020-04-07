@@ -56,7 +56,9 @@ Added root fitting to theoretical model that matches linear fit very well. Thres
 
 *** geodata/sketchG1-1.py Show a whole MODIS granule, superimposed on GOES in a lat-lon bbox.
 *** geodata/sketchG2.py   Compare GOES and MODIS Granules by "clearing" bits to level, uses GRING, and distribute across nodes
-*** geodata/sketchH.py    Partition MODIS data
+*** geodata/sketchH0.py   Partition MODIS data, basic sketches for VDS
+*** geodata/sketchH1.py   Shape and type check of VDS-style data stored in HDF
+*** geodata/sketchH2.py   Visualize VDS-style partitioning of MODIS data
 *** geodata/sketchI0.py   Intersection example
 *** geodata/sketchJ0.py   Implement a new src_coord convention.
 *** geodata/sketchJ1.py   Implement a new src_coord convention. Added to GeoData/geodata.

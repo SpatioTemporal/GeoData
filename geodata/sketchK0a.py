@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 import cartopy.crs as ccrs
 
+import datetime
+
 import geodata as gd
 import pystare as ps
 import h5py as h5
@@ -291,7 +293,18 @@ def main():
                         ax.scatter(m_lon[i0:i1],m_lat[i0:i1],s=2.5,c='k',transform=transf)
                         ind  = m_str[i0:i1]
                         inda = ps.adapt_resolution_to_proximity(ind)
-                        plot_sivs(inda,c0='g',c1='g',transf=transf,ax=ax)   
+                        plot_sivs(inda,c0='g',c1='g',transf=transf,ax=ax)
+                        
+                an = ax.annotate(
+                    'Figure:  sketchK0a: GOES square and 2 MODIS scans, 1 plot\n'
+                    +'Date:    %s\n'%datetime.date.today()
+                    +'Version: 2020-0407-1\n'
+                    +'Author:  M. Rilee, RSTLLC\n'
+                    +'Email:   mike@rilee.net\n'
+                    ,xy=(0.7,0.025)
+                    ,xycoords='figure fraction'
+                    ,family='monospace'
+                )
 
                 plt.show()
                 
@@ -329,6 +342,17 @@ def main():
                         plot_sivs(inda,c0='g',c1='g',transf=transf,ax=ax)
                 
                     
+                an = ax.annotate(
+                    'Figure:  sketchK0a: GOES square and MODIS scan\n'
+                    +'Date:    %s\n'%datetime.date.today()
+                    +'Version: 2020-0407-1\n'
+                    +'Author:  M. Rilee, RSTLLC\n'
+                    +'Email:   mike@rilee.net\n'
+                    ,xy=(0.7,0.025)
+                    ,xycoords='figure fraction'
+                    ,family='monospace'
+                )
+
                 plt.show()
                 return
         

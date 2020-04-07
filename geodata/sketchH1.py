@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Check data written to vds-style file
+
 import os
 
 import matplotlib as mpl
