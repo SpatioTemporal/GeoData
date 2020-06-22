@@ -36,7 +36,7 @@ Python 3
 
 # Installation
 
-    pip3 install git+git://github.com/MichaelLeeRilee/GeoData.git
+    pip3 install git+git://github.com/SpatioTemporal/GeoData.git
 
 # Acknowledgments
 
