@@ -5,7 +5,7 @@
 
 import os
 import numpy
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 from setuptools.command.build_py import build_py as _build_py
 
 LONG_DESCRIPTION = """ """
@@ -16,7 +16,8 @@ data_files = []
 
 setup(
     name='geodata',
-    version='0.0.1',
+    version='0.0.2',
+    packages=find_packages(),
     description="",
     long_description=LONG_DESCRIPTION,         
     py_modules = ['geodata'],
