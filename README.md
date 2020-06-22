@@ -27,10 +27,16 @@ Contains notes about the sketches in geodata.
 
 # Dependencies
 STARE
-- github.com/michaelleerilee/STARE
+- github.com/SpatioTemporal/STARE
+- github.com/SpatioTemporal/pystare
+
 Python 3
 - SortedContainers, h5py, netCDF4
 - And more...
+
+# Installation
+
+    pip3 install git+git://github.com/MichaelLeeRilee/GeoData.git
 
 # Acknowledgments
 
