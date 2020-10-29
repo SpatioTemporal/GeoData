@@ -434,7 +434,9 @@ def parse_hdfeos_metadata(string):
   lines = []
   for l in lines0:
       if "=" in l:
-          key,value = l.split('=')
+          # fails if = in URL: key,value = line.split('=')
+          key = line.split('=')[0]
+          value = '='.join(line.split('=')[1:])
           lines.append(key.strip()+'='+value.strip())
       else:
           lines.append(l)
@@ -444,7 +446,9 @@ def parse_hdfeos_metadata(string):
       i+=1
       line = lines[i]
       if "=" in line:
-          key,value = line.split('=')
+          # fails if = in URL: key,value = line.split('=')
+          key = line.split('=')[0]
+          value = '='.join(line.split('=')[1:])
 #          print('key: "%s"'%key)
           if key in ['GROUP','OBJECT']:
               endIdx = lines.index('END_{}={}'.format(key,value))
