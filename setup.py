@@ -9,7 +9,13 @@ from setuptools import setup, Extension, find_packages
 from setuptools.command.build_py import build_py as _build_py
 
 LONG_DESCRIPTION = """ """
-INSTALL_REQUIRES = ['pystare>=0.5']
+INSTALL_REQUIRES = [
+    'pystare>=0.5',
+    'netcdf4',
+    'pyyaml',
+    'pyhdf',
+    'sortedcontainers'
+]
 
 # get all data dirs in the datasets module
 data_files = []

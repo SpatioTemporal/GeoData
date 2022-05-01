@@ -1,4 +1,54 @@
 
+GeoData
+
+* Installation Troubles
+
+
+** PYTHONPATH
+
+*** Minimal
+
+#- export PYTHONPATH=.
+#- export PYTHONPATH=.:/home/mrilee/git/Fumarole-dabi/fset/build
+export PYTHONPATH=.:/home/mrilee/git/Fumarole-dabi/fset/build:/home/mrilee/opt/src/mrilee/git/NOGGIN-github/:/home/mrilee/opt/src/mrilee/git/CCL/
+
+export PYTHONPATH=.:/home/mrilee/git/GeoData/geodata/:/home/mrilee/git/GeoData/
+
+
+export PYTHONPATH=.:/home/mrilee/git/GeoData-dabi/geodata/:/home/mrilee/git/GeoData-dabi/
+
+*** Old PYTHONPATH
+.:/home/mrilee/opt/src/mrilee/git/Fumarole/build-fset:/home/mrilee/opt/src/mrilee/git/STARE/build1/src/:/home/mrilee/opt/src/mrilee/git/NOGGIN-github/:/home/mrilee/opt/src/mrilee/git/CCL/:/home/mrilee/opt/src/mrilee/git/GeoData/
+
+.:
+/home/mrilee/opt/src/mrilee/git/Fumarole/build-fset:
+/home/mrilee/opt/src/mrilee/git/STARE/build1/src/:
+/home/mrilee/opt/src/mrilee/git/NOGGIN-github/:/home/mrilee/opt/src/mrilee/git/CCL/:
+/home/mrilee/opt/src/mrilee/git/GeoData/
+
+
+* fset compilation
+
+FERMAT_SDK_HOME=/home/mrilee/opt/src/mrilee/Fermat/FermatSDK20200603/
+
+/home/mrilee/opt/src/mrilee/Fermat/FermatSDK20200603-1
+
+** PYTHON_INCLUDE_DIRS
+
+export PYTHON_INCLUDE_DIRS=/home/mrilee/opt/anaconda3/envs/2022-work/include/python3.10:/home/mrilee/opt/anaconda3/envs/2022-work/lib/python3.10/site-packages/numpy/core/include/
+
+/home/mrilee/opt/anaconda3/envs/2022-work/include/python3.10
+/home/mrilee/opt/anaconda3/envs/2022-work/lib/python3.10/site-packages/numpy/core/include/
+
+
+*** OLD PYTHON_INCLUDE_DIR
+PYTHON_INCLUDE_DIRS=/home/mrilee/opt/anaconda3/include/python3.7m/:/home/mrilee/opt/anaconda3/lib/python3.7/site-packages/numpy/core/include/
+
+
+PYTHON_INCLUDE_DIRS=
+/home/mrilee/opt/anaconda3/include/python3.7m/:
+/home/mrilee/opt/anaconda3/lib/python3.7/site-packages/numpy/core/include/
+
 
 * Notes on sketches
 

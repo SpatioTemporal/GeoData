@@ -28,6 +28,9 @@ except ImportError:
 
 from collections import OrderedDict
 
+import traceback
+dbg = False
+
 ###########################################################################
 # A few constants
 #
@@ -145,7 +148,8 @@ def bbox_lonlat(lat,lon,km,close=False):
   else:
     return [lonm,lonp,lonp,lonm],[latm,latm,latp,latp]
 
-stare_temporal_resolutions = { 2: {'1year':18,'1day':27, '1/2day':28,'4hr':30,'1hr':32,'1/2hr':33,'1/4hr':34,'1/8hr':35,'1/16hr':36,'1sec':44,'1msec':54}}
+stare_temporal_resolutions = { 2: {'1year':12,'1day':21, '1/2day':22,'4hr':24,'1hr':26,'1/2hr':27,'1/4hr':28,'1/8hr':29,'1/16hr':30,'1sec':38,'1msec':48}} # Corrected by hand
+#stare_temporal_resolutions = { 2: {'1year':18,'1day':27, '1/2day':28,'4hr':30,'1hr':32,'1/2hr':33,'1/4hr':34,'1/8hr':35,'1/16hr':36,'1sec':44,'1msec':54}}
 
 def format_time(yr,mo,dy,hr,mn,sc):
     return "%04d-%02d-%02dT%02d:%02d:%02d"%(yr,mo,dy,hr,mn,sc)
@@ -166,6 +170,8 @@ def merra2_make_time(start_min,tim_min):
     return t_hr,t_mn
 
 def merra2_stare_time(ds,iTime=None,tType=2,centered=True):
+  if dbg:
+    traceback.print_stack()
   if centered:
     start_time_mn = ds['time'].begin_time/100
     start_time_sec = ds['time'].begin_time % 100
@@ -174,6 +180,7 @@ def merra2_stare_time(ds,iTime=None,tType=2,centered=True):
     start_time_mn = 0;
     start_time_sec = 0
     resolution = stare_temporal_resolutions[tType]['1hr']
+
   yr,mo,dy = merra2_parse_begin_date(ds['time'].begin_date)
   tm = []
   if iTime is None:
@@ -186,7 +193,14 @@ def merra2_stare_time(ds,iTime=None,tType=2,centered=True):
     sc       = start_time_sec
     tm.append(format_time(yr,mo,dy,hr,mn,sc))
   dt       = np.array(tm,dtype='datetime64[ms]')
-  idx      = ps.from_utc(dt.astype(np.int64),resolution)
+
+  resolution_as_array = np.full(dt.shape,resolution, dtype=np.int64)
+  res = resolution_as_array
+  # res = ps.temporal.coarsest_resolution_finer_or_equal_ms(resolution_as_array)
+
+  if dbg:
+    print("merra2_stare_time",dt,res)
+  idx      = ps.from_utc_variable(dt.astype(np.int64), res, res)
   return idx
 
 def merra2_stare_time_ds(ds):
@@ -194,10 +208,12 @@ def merra2_stare_time_ds(ds):
   return stare_set_temporal_resolution(dt,stare_temporal_resolutions[2]['1/2day'])[0]
 
 def goes10_img_stare_time(ds,tType=2,centered=True):
-  resolution = stare_temporal_resolutions[2]['1/4hr']
+  resolution = np.array([stare_temporal_resolutions[2]['1/4hr']],dtype=np.int64)
   dt = np.array(ds['time'][0]*1000,dtype='datetime64[ms]').reshape([1])
-  return ps.from_utc(dt.astype(np.int64),resolution)
-  # return ps.from_utc(np.array(ds['time'][:]*1000,dtype='datetime64[ms]').astype(np.int64),resolution)
+  if dbg:
+    print('dbg: ',dt,resolution)
+  return ps.from_utc_variable(dt.astype(np.int64),resolution,resolution)
+  # return ps.from_utc(np.array(ds['time'][:]*1000,dtype='datetime64[ms]').astype(np.int64),resolution) ??
 
 def datetime_from_stare(tId):
   if type(tId) is np.ndarray:
@@ -226,7 +242,11 @@ def temporal_id_centered_from_goes_filename(gfname):
     gdt = dt.datetime(int(yr),1,1)+dt.timedelta(int(ydy)-1)
     gdt_str = format_time(int(yr),int(gdt.month),int(gdt.day),hr,mn,sec)
     gdt_np = np.array([gdt_str],dtype='datetime64[ms]')
-    gtid_centered = ps.from_utc(gdt_np.astype(np.int64),stare_temporal_resolutions[2]['1/4hr'])
+    resolution = stare_temporal_resolutions[2]['1/4hr']
+    resolution_as_array = np.array([resolution], dtype=np.int64)
+    # res = ps.temporal.coarsest_resolution_finer_or_equal_ms(resolution_as_array)
+    res = resolution_as_array
+    gtid_centered = ps.from_utc_variable(gdt_np.astype(np.int64), res, res)
     return gtid_centered
 
 def temporal_id_centered_from_merra2_filename(m2name):
@@ -239,7 +259,11 @@ def temporal_id_centered_from_merra2_filename(m2name):
     sec = 0
     m2dt_str = format_time(yr,mo,dy,hr,mn,sec)
     m2dt_np = np.array([m2dt_str],dtype='datetime64[ms]')
-    m2tid_centered = ps.from_utc(m2dt_np.astype(np.int64),stare_temporal_resolutions[2]['1/2day'])
+    resolution = stare_temporal_resolutions[2]['1/2day']
+    resolution_as_array = np.array([resolution], dtype=np.int64)
+    # res = ps.temporal.coarsest_resolution_finer_or_equal_ms(resolution_as_array)
+    res = resolution_as_array
+    m2tid_centered = ps.from_utc_variable(m2dt_np.astype(np.int64), res, res)
     return m2tid_centered
 
 def temporal_id_centered_from_modis_filename(mfname):
@@ -253,7 +277,8 @@ def temporal_id_centered_from_modis_filename(mfname):
     mdt = dt.datetime(int(yr),1,1)+dt.timedelta(int(ydy)-1)
     mdt_str = format_time(int(yr),int(mdt.month),int(mdt.day),hr,mn,sec)
     mdt_np = np.array([mdt_str],dtype='datetime64[ms]')
-    mtid_centered = ps.from_utc(mdt_np.astype(np.int64),stare_temporal_resolutions[2]['1/16hr'])
+    res = stare_temporal_resolutions[2]['1/16hr']
+    mtid_centered = ps.from_utc_variable(mdt_np.astype(np.int64),res,res)
     return mtid_centered
 
 def temporal_id_centered_from_filename(fname):
@@ -381,7 +406,7 @@ class data_catalog(object):
             for pattern in patterns:
                 for entry in filelist:
                     if fnmatch.fnmatch(entry,pattern):
-                        self.files.append(entry)        
+                        self.files.append(entry)
         return self.files
 
     def get_tid_centered_index(self):
