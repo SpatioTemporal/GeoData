@@ -277,7 +277,9 @@ def temporal_id_centered_from_modis_filename(mfname):
     mdt = dt.datetime(int(yr),1,1)+dt.timedelta(int(ydy)-1)
     mdt_str = format_time(int(yr),int(mdt.month),int(mdt.day),hr,mn,sec)
     mdt_np = np.array([mdt_str],dtype='datetime64[ms]')
-    res = stare_temporal_resolutions[2]['1/16hr']
+    resolution = stare_temporal_resolutions[2]['1/16hr']
+    resolution_as_array = np.array([resolution], dtype=np.int64)
+    res = resolution_as_array
     mtid_centered = ps.from_utc_variable(mdt_np.astype(np.int64),res,res)
     return mtid_centered
 
