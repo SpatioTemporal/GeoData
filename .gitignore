@@ -6,3 +6,8 @@
 *dask-worker-space*
 *#*
 *gradient.png
+*.egg-info
+geodata/core-old.py
+geodata/geodata-dabi.py
+
+
