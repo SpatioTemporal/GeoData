@@ -2,7 +2,7 @@
 
 Exercises in Geoscience Data Integration using SpatioTemporal Adaptive Resolution Encoding.
 
-For more information contact Michael Rilee (mike@rilee.net).
+For more information contact Michael Rilee (mike@bayesics.com).
 
 The key modules in this Python 3 package are as follows.
 - geodata.py
